@@ -79,6 +79,10 @@ namespace WorldEdit
             if (int.TryParse(tile, out ID) && ID >= 0 && ID < Main.maxTileSets)
                 return new List<int> { ID };
 
+            var item = TShock.Utils.GetItemFromTag(tile);
+            if (item != null)
+                return new List<int> { item.createTile };
+
             var list = new List<int>();
             foreach (var kvp in WorldEdit.Tiles)
             {
@@ -94,6 +98,10 @@ namespace WorldEdit
             int ID;
             if (int.TryParse(wall, out ID) && ID >= 0 && ID < Main.maxWallTypes)
                 return new List<int> { ID };
+
+            var item = TShock.Utils.GetItemFromTag(wall);
+            if (item != null)
+                return new List<int> { item.createWall };
 
             var list = new List<int>();
             foreach (var kvp in WorldEdit.Walls)
