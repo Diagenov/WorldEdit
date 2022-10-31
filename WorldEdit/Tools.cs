@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using OTAPI.Tile;
 using Terraria;
 using TShockAPI;
 using TShockAPI.DB;
@@ -331,7 +330,7 @@ namespace WorldEdit
         {
             var tile = new Tile
             {
-                sTileHeader = reader.ReadInt16(),
+                sTileHeader = reader.ReadUInt16(),
                 bTileHeader = reader.ReadByte(),
                 bTileHeader2 = reader.ReadByte()
             };
@@ -355,7 +354,7 @@ namespace WorldEdit
         {
             var tile = new Tile
             {
-                sTileHeader = reader.ReadInt16(),
+                sTileHeader = reader.ReadUInt16(),
                 bTileHeader = reader.ReadByte(),
                 bTileHeader2 = reader.ReadByte()
             };
