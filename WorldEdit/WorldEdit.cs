@@ -598,9 +598,23 @@ namespace WorldEdit
 				var name = TShockAPI.Localization.EnglishLanguage.GetItemNameById(i).Split(' ');
 				Colors.Add(string.Join(" ", name.Take(name.Length - 1)).ToLowerInvariant(), item.paint);
 			}
-			#endregion
-			#region Selections
-			Selections.Add("altcheckers", (i, j, plr) => ((i + j) & 1) == 0);
+
+			int lastPaint = Colors.Last().Value;
+            for (var i = 1; i < Main.maxItemTypes; i++)
+            {
+                item.netDefaults(i);
+
+                if (item.paintCoating <= 0)
+                {
+                    continue;
+                }
+
+                var name = TShockAPI.Localization.EnglishLanguage.GetItemNameById(i).Split(' ');
+                Colors.Add(string.Join(" ", name.Take(name.Length - 1)).ToLowerInvariant(), lastPaint + item.paintCoating);
+            }
+            #endregion
+            #region Selections
+            Selections.Add("altcheckers", (i, j, plr) => ((i + j) & 1) == 0);
 			Selections.Add("checkers", (i, j, plr) => ((i + j) & 1) == 1);
 			Selections.Add("ellipse", (i, j, plr) =>
 			{
