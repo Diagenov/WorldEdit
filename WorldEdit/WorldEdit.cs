@@ -595,8 +595,8 @@ namespace WorldEdit
 					continue;
 				}
 
-				var name = TShockAPI.Localization.EnglishLanguage.GetItemNameById(i);
-				Colors.Add(name.Substring(0, name.Length - 6).ToLowerInvariant(), item.paint);
+				var name = TShockAPI.Localization.EnglishLanguage.GetItemNameById(i).Split(' ');
+				Colors.Add(string.Join(" ", name.Take(name.Length - 1)).ToLowerInvariant(), item.paint);
 			}
 			#endregion
 			#region Selections
