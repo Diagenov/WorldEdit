@@ -63,7 +63,7 @@ namespace WorldEdit
             {
                 if (coating = ID >= WorldEdit.Colors.Count)
                 {
-                    ID -= WorldEdit.Colors.Count;
+                    ID -= WorldEdit.Colors.Count - 1;
                 }
                 return new List<int> { ID };
             }
