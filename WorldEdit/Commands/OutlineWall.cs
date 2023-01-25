@@ -19,7 +19,8 @@ namespace WorldEdit.Commands
 		{
 			this.wallType = wallType;
 			this.color = color;
-			this.expression = expression ?? new TestExpression(new Test(t => true));
+            this.coating = coating;
+            this.expression = expression ?? new TestExpression(new Test(t => true));
 		}
 
 		public override void Execute()

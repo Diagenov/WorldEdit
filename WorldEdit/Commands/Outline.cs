@@ -21,7 +21,8 @@ namespace WorldEdit.Commands
 			this.tileType = tileType;
 			this.color = color;
 			this.active = active;
-			this.expression = expression ?? new TestExpression(new Test(t => true));
+            this.coating = coating;
+            this.expression = expression ?? new TestExpression(new Test(t => true));
 		}
 
 		public override void Execute()

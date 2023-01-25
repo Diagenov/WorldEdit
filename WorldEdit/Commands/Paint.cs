@@ -13,6 +13,7 @@ namespace WorldEdit.Commands
 		public Paint(int x, int y, int x2, int y2, MagicWand magicWand, TSPlayer plr, int color, bool coating, Expression expression)
 			: base(x, y, x2, y2, magicWand, plr)
 		{
+			this.coating = coating;
 			this.color = color;
 			this.expression = expression ?? new TestExpression(new Test(t => true));
 		}
