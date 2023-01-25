@@ -56,19 +56,32 @@ namespace WorldEdit
         {
             return name.All(c => !InvalidFileNameChars.Contains(c));
         }
-        public static List<int> GetColorID(string color)
+        public static List<int> GetColorID(string color, out bool coating)
         {
             int ID;
-            if (int.TryParse(color, out ID) && ID >= 0 && ID < Main.numTileColors)
+            if (int.TryParse(color, out ID) && ID >= 0 && ID < WorldEdit.Colors.Count + WorldEdit.Coatings.Count)
+            {
+                if (coating = ID >= WorldEdit.Colors.Count)
+                {
+                    ID -= WorldEdit.Colors.Count;
+                }
                 return new List<int> { ID };
+            }
 
+            coating = false;
             var list = new List<int>();
-            foreach (var kvp in WorldEdit.Colors)
+            foreach (var kvp in WorldEdit.Colors.Concat(WorldEdit.Coatings))
             {
                 if (kvp.Key == color)
+                {
+                    coating = WorldEdit.Coatings.ContainsKey(kvp.Key);
                     return new List<int> { kvp.Value };
+                }
                 if (kvp.Key.StartsWith(color))
+                {
                     list.Add(kvp.Value);
+                    coating = WorldEdit.Coatings.ContainsKey(kvp.Key);
+                }
             }
             return list;
         }
@@ -145,7 +158,7 @@ namespace WorldEdit
 
         #region LoadWorldSectionData
 
-        public static WorldSectionData LoadWorldData(Stream stream)
+        public static WorldSectionData LoadWorldData(Stream stream, bool oldFormat)
         {
             int x, y, width, height;
             using (var reader = new BinaryReader(stream, System.Text.Encoding.UTF8, true))
@@ -164,7 +177,7 @@ namespace WorldEdit
                 for (var i = 0; i < width; i++)
                 {
                     for (var j = 0; j < height; j++)
-                        worldData.Tiles[i, j] = reader.ReadTile();
+                        worldData.Tiles[i, j] = reader.ReadTile(oldFormat);
                 }
 
                 try
@@ -255,8 +268,12 @@ namespace WorldEdit
             }
         }
 
-        public static WorldSectionData LoadWorldData(string path) =>
-            LoadWorldData(File.Open(path, FileMode.Open));
+        public static WorldSectionData LoadWorldData(string path) 
+        {
+            var lastWrite = File.GetLastWriteTime(path);
+            var oldFormat = lastWrite.Year <= 2023 && lastWrite.Month <= 1 && lastWrite.Day <= 25;
+            return LoadWorldData(File.Open(path, FileMode.Open), oldFormat);
+        }
 
         internal static WorldSectionData LoadWorldDataOld(Stream stream)
         {
@@ -326,13 +343,14 @@ namespace WorldEdit
         internal static WorldSectionData LoadWorldDataOld(string path) =>
             LoadWorldDataOld(File.Open(path, FileMode.Open));
 
-        public static Tile ReadTile(this BinaryReader reader)
+        public static Tile ReadTile(this BinaryReader reader, bool oldFormat)
         {
             var tile = new Tile
             {
                 sTileHeader = reader.ReadUInt16(),
                 bTileHeader = reader.ReadByte(),
-                bTileHeader2 = reader.ReadByte()
+                bTileHeader2 = reader.ReadByte(),
+                bTileHeader3 = oldFormat ? (byte)0 : reader.ReadByte()
             };
 
             // Tile type
@@ -723,6 +741,7 @@ namespace WorldEdit
 			writer.Write(tile.sTileHeader);
 			writer.Write(tile.bTileHeader);
 			writer.Write(tile.bTileHeader2);
+            writer.Write(tile.bTileHeader3);
 
 			if (tile.active())
 			{

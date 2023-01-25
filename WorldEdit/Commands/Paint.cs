@@ -6,10 +6,11 @@ namespace WorldEdit.Commands
 {
 	public class Paint : WECommand
 	{
+		private bool coating;
 		private int color;
 		private Expression expression;
 
-		public Paint(int x, int y, int x2, int y2, MagicWand magicWand, TSPlayer plr, int color, Expression expression)
+		public Paint(int x, int y, int x2, int y2, MagicWand magicWand, TSPlayer plr, int color, bool coating, Expression expression)
 			: base(x, y, x2, y2, magicWand, plr)
 		{
 			this.color = color;
@@ -28,8 +29,11 @@ namespace WorldEdit.Commands
 					var tile = Main.tile[i, j];
 					if (tile.active() && tile.color() != color && select(i, j, plr) && expression.Evaluate(tile) && magicWand.InSelection(i, j))
 					{
-						tile.color((byte)color);
-						edits++;
+                        if (coating)
+                            WorldGen.paintCoatTile(i, j, (byte)color);
+                        else
+                            tile.color((byte)color);
+                        edits++;
 					}
 				}
 			}

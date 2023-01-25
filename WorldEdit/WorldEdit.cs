@@ -33,7 +33,8 @@ namespace WorldEdit
 
 		public static Dictionary<string, Commands.Biomes.Biome> Biomes = new Dictionary<string, Commands.Biomes.Biome>();
 		public static Dictionary<string, int> Colors = new Dictionary<string, int>();
-		public static IDbConnection Database;
+        public static Dictionary<string, int> Coatings = new Dictionary<string, int>();
+        public static IDbConnection Database;
 		public static Dictionary<string, Selection> Selections = new Dictionary<string, Selection>();
 		public static Dictionary<string, int> Tiles = new Dictionary<string, int>();
 		public static Dictionary<string, int> Walls = new Dictionary<string, int>();
@@ -590,27 +591,16 @@ namespace WorldEdit
 			{
 				item.netDefaults(i);
 
-				if (item.paint <= 0)
+				if (item.paint > 0)
 				{
-					continue;
-				}
-
-				var name = TShockAPI.Localization.EnglishLanguage.GetItemNameById(i).Split(' ');
-				Colors.Add(string.Join(" ", name.Take(name.Length - 1)).ToLowerInvariant(), item.paint);
-			}
-
-			int lastPaint = Colors.Last().Value;
-            for (var i = 1; i < Main.maxItemTypes; i++)
-            {
-                item.netDefaults(i);
-
-                if (item.paintCoating <= 0)
-                {
-                    continue;
+                    var name = TShockAPI.Localization.EnglishLanguage.GetItemNameById(i).Split(' ');
+                    Colors.Add(string.Join(" ", name.Take(name.Length - 1)).ToLowerInvariant(), item.paint);
                 }
-
-                var name = TShockAPI.Localization.EnglishLanguage.GetItemNameById(i).Split(' ');
-                Colors.Add(string.Join(" ", name.Take(name.Length - 1)).ToLowerInvariant(), lastPaint + item.paintCoating);
+                if (item.paintCoating > 0)
+                {
+                    var name = TShockAPI.Localization.EnglishLanguage.GetItemNameById(i).Split(' ');
+                    Coatings.Add(string.Join(" ", name.Take(name.Length - 1)).ToLowerInvariant(), item.paintCoating);
+                }
             }
             #endregion
             #region Selections
@@ -1381,7 +1371,7 @@ namespace WorldEdit
 				return;
 			}
 
-			var colors = Tools.GetColorID(e.Parameters[1].ToLowerInvariant());
+			var colors = Tools.GetColorID(e.Parameters[1].ToLowerInvariant(), out bool coating);
 			if (colors.Count == 0)
 				e.Player.SendErrorMessage("Invalid color '{0}'!", e.Parameters[0]);
 			else if (colors.Count > 1)
@@ -1417,7 +1407,7 @@ namespace WorldEdit
 							return;
 						}
 					}
-					_commandQueue.Add(new Outline(info.X, info.Y, info.X2, info.Y2, info.MagicWand, e.Player, tiles[0], colors[0], state, expression));
+					_commandQueue.Add(new Outline(info.X, info.Y, info.X2, info.Y2, info.MagicWand, e.Player, tiles[0], colors[0], state, coating, expression));
 				}
 			}
 		}
@@ -1436,7 +1426,7 @@ namespace WorldEdit
 				return;
 			}
 
-			var colors = Tools.GetColorID(e.Parameters[1].ToLowerInvariant());
+			var colors = Tools.GetColorID(e.Parameters[1].ToLowerInvariant(), out bool coating);
 			if (colors.Count == 0)
 				e.Player.SendErrorMessage("Invalid color '{0}'!", e.Parameters[0]);
 			else if (colors.Count > 1)
@@ -1459,7 +1449,7 @@ namespace WorldEdit
 							return;
 						}
 					}
-					_commandQueue.Add(new OutlineWall(info.X, info.Y, info.X2, info.Y2, info.MagicWand, e.Player, walls[0], colors[0], expression));
+					_commandQueue.Add(new OutlineWall(info.X, info.Y, info.X2, info.Y2, info.MagicWand, e.Player, walls[0], colors[0], coating, expression));
 				}
 			}
 		}
@@ -1478,7 +1468,7 @@ namespace WorldEdit
 				return;
 			}
 
-			var colors = Tools.GetColorID(e.Parameters[0].ToLowerInvariant());
+			var colors = Tools.GetColorID(e.Parameters[0].ToLowerInvariant(), out bool coating);
 			if (colors.Count == 0)
 				e.Player.SendErrorMessage("Invalid color '{0}'!", e.Parameters[0]);
 			else if (colors.Count > 1)
@@ -1494,7 +1484,7 @@ namespace WorldEdit
 						return;
 					}
 				}
-				_commandQueue.Add(new Paint(info.X, info.Y, info.X2, info.Y2, info.MagicWand, e.Player, colors[0], expression));
+				_commandQueue.Add(new Paint(info.X, info.Y, info.X2, info.Y2, info.MagicWand, e.Player, colors[0], coating, expression));
 			}
 		}
 
@@ -1512,7 +1502,7 @@ namespace WorldEdit
 				return;
 			}
 
-			var colors = Tools.GetColorID(e.Parameters[0].ToLowerInvariant());
+			var colors = Tools.GetColorID(e.Parameters[0].ToLowerInvariant(), out bool coating);
 			if (colors.Count == 0)
 				e.Player.SendErrorMessage("Invalid color '{0}'!", e.Parameters[0]);
 			else if (colors.Count > 1)
@@ -1528,7 +1518,7 @@ namespace WorldEdit
 						return;
 					}
 				}
-				_commandQueue.Add(new PaintWall(info.X, info.Y, info.X2, info.Y2, info.MagicWand, e.Player, colors[0], expression));
+				_commandQueue.Add(new PaintWall(info.X, info.Y, info.X2, info.Y2, info.MagicWand, e.Player, colors[0], coating, expression));
 			}
 		}
 

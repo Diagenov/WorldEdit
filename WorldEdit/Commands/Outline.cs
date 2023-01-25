@@ -12,8 +12,10 @@ namespace WorldEdit.Commands
 		private int tileType;
 		private int color;
 		private bool active;
+		private bool coating;
 
-		public Outline(int x, int y, int x2, int y2, MagicWand magicWand, TSPlayer plr, int tileType, int color, bool active, Expression expression)
+
+        public Outline(int x, int y, int x2, int y2, MagicWand magicWand, TSPlayer plr, int tileType, int color, bool active, bool coating, Expression expression)
 			: base(x, y, x2, y2, magicWand, plr)
 		{
 			this.tileType = tileType;
@@ -103,8 +105,11 @@ namespace WorldEdit.Commands
 			foreach (Point p in tiles)
 			{
 				var tile = Main.tile[p.X, p.Y];
-				tile.color((byte)color);
-				tile.inActive(!active);
+                if (coating)
+                    WorldGen.paintCoatTile(p.X, p.Y, (byte)color);
+                else
+                    tile.color((byte)color);
+                tile.inActive(!active);
 				SetTile(p.X, p.Y, tileType);
 			}
 

@@ -178,8 +178,8 @@ namespace WorldEdit.Expressions
 						if (string.IsNullOrEmpty(rhs))
 							return test = t => t.active() && t.color() != 0;
 
-						var colors = Tools.GetColorID(rhs);
-						if (colors.Count == 0 || colors.Count > 1)
+						var colors = Tools.GetColorID(rhs, out bool coating);
+						if (colors.Count == 0 || colors.Count > 1 || coating)
 							throw new ArgumentException();
 						return test = t => (t.active() && t.color() == colors[0]) != negated;
                     }
@@ -206,8 +206,8 @@ namespace WorldEdit.Expressions
 						if (string.IsNullOrEmpty(rhs))
 							return test = t => t.wall > 0 && t.wallColor() != 0;
 
-						var colors = Tools.GetColorID(rhs);
-						if (colors.Count == 0 || colors.Count > 1)
+						var colors = Tools.GetColorID(rhs, out bool coating);
+						if (colors.Count == 0 || colors.Count > 1 || coating)
 							throw new ArgumentException();
 						return test = t => (t.wall > 0 && t.wallColor() == colors[0]) != negated;
                     }

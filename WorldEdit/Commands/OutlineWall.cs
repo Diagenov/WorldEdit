@@ -11,8 +11,10 @@ namespace WorldEdit.Commands
 		private Expression expression;
 		private int wallType;
 		private int color;
+		private bool coating;
 
-		public OutlineWall(int x, int y, int x2, int y2, MagicWand magicWand, TSPlayer plr, int wallType, int color, Expression expression)
+
+        public OutlineWall(int x, int y, int x2, int y2, MagicWand magicWand, TSPlayer plr, int wallType, int color, bool coating, Expression expression)
 			: base(x, y, x2, y2, magicWand, plr)
 		{
 			this.wallType = wallType;
@@ -101,8 +103,11 @@ namespace WorldEdit.Commands
 			foreach (Point p in walls)
 			{
 				var tile = Main.tile[p.X, p.Y];
-				tile.wallColor((byte)color);
-				tile.wall = (ushort)wallType;
+                if (coating)
+                    WorldGen.paintCoatWall(p.X, p.Y, (byte)color);
+                else
+                    tile.wallColor((byte)color);
+                tile.wall = (ushort)wallType;
 			}
 
 			ResetSection();

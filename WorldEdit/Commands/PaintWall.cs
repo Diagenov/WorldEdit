@@ -7,9 +7,11 @@ namespace WorldEdit.Commands
 	public class PaintWall : WECommand
 	{
 		private int color;
-		private Expression expression;
+		private bool coating;
 
-		public PaintWall(int x, int y, int x2, int y2, MagicWand magicWand, TSPlayer plr, int color, Expression expression)
+        private Expression expression;
+
+		public PaintWall(int x, int y, int x2, int y2, MagicWand magicWand, TSPlayer plr, int color, bool coating, Expression expression)
 			: base(x, y, x2, y2, magicWand, plr)
 		{
 			this.color = color;
@@ -28,7 +30,10 @@ namespace WorldEdit.Commands
 					var tile = Main.tile[i, j];
 					if (tile.wall > 0 && tile.wallColor() != color && select(i, j, plr) && expression.Evaluate(tile) && magicWand.InSelection(i, j))
 					{
-						tile.wallColor((byte)color);
+						if (coating)
+							WorldGen.paintCoatWall(i, j, (byte)color);
+						else
+							tile.wallColor((byte)color);
 						edits++;
 					}
 				}
