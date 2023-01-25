@@ -271,7 +271,8 @@ namespace WorldEdit
         public static WorldSectionData LoadWorldData(string path) 
         {
             var lastWrite = File.GetLastWriteTime(path);
-            var oldFormat = lastWrite.Year <= 2023 && lastWrite.Month <= 1 && lastWrite.Day <= 25;
+            var date = new DateTime(2023, 1, 25, 19, 0, 0);
+            var oldFormat = lastWrite < date;
             return LoadWorldData(File.Open(path, FileMode.Open), oldFormat);
         }
 
