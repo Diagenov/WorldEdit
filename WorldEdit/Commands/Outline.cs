@@ -106,7 +106,13 @@ namespace WorldEdit.Commands
 			foreach (Point p in tiles)
 			{
 				var tile = Main.tile[p.X, p.Y];
-                if (coating)
+                if (color == 0)
+                {
+                    tile.color(0);
+                    tile.invisibleBlock(false);
+                    tile.fullbrightBlock(false);
+                }
+                else if (coating)
                     WorldGen.paintCoatTile(p.X, p.Y, (byte)color);
                 else
                     tile.color((byte)color);

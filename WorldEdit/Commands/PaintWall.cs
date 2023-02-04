@@ -31,7 +31,13 @@ namespace WorldEdit.Commands
 					var tile = Main.tile[i, j];
 					if (tile.wall > 0 && tile.wallColor() != color && select(i, j, plr) && expression.Evaluate(tile) && magicWand.InSelection(i, j))
 					{
-						if (coating)
+                        if (color == 0)
+                        {
+                            tile.wallColor(0);
+                            tile.invisibleWall(false);
+                            tile.fullbrightWall(false);
+                        }
+                        else if (coating)
 							WorldGen.paintCoatWall(i, j, (byte)color);
 						else
 							tile.wallColor((byte)color);
