@@ -1857,7 +1857,7 @@ namespace WorldEdit
         {
             if (e.Parameters.Count < 2)
             {
-                e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //replace <from tile> <to tile> [=> boolean expr...]");
+                e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //replacewall <from wall> <to wall> [=> boolean expr...]");
                 return;
             }
 
@@ -1868,15 +1868,15 @@ namespace WorldEdit
                 return;
             }
 
-            var wallsFrom = Tools.GetTileID(e.Parameters[0].ToLowerInvariant());
+            var wallsFrom = Tools.GetWallID(e.Parameters[0].ToLowerInvariant());
             if (wallsFrom.Count == 0)
             {
-                e.Player.SendErrorMessage("Invalid tile '{0}'!", e.Parameters[0]);
+                e.Player.SendErrorMessage("Invalid wall '{0}'!", e.Parameters[0]);
                 return;
             }
             else if (wallsFrom.Count > 1)
             {
-                e.Player.SendErrorMessage("More than one tile matched!");
+                e.Player.SendErrorMessage("More than one wall matched!");
                 return;
             }
 

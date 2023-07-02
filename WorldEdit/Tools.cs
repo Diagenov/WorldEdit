@@ -842,7 +842,7 @@ namespace WorldEdit
                  || ((type == -4) && ((tile.liquid == 0) || (tile.liquidType() != 0))))
                  && selection(x, y, player) && expression.Evaluate(tile)
                  && magicWand.InSelection(x, y))
-                : ((tile.wall != type) && selection(x, y, player)
+                : (tile.wall != type && selection(x, y, player)
                  && expression.Evaluate(tile) && magicWand.InSelection(x, y));
 
         public static WEPoint[] CreateLine(int x1, int y1, int x2, int y2)

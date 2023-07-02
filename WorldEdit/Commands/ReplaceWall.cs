@@ -20,7 +20,10 @@ namespace WorldEdit.Commands
 
         public override void Execute()
         {
-            if (!CanUseCommand()) { return; }
+            if (!CanUseCommand()) 
+            { 
+                return; 
+            }
             Tools.PrepareUndo(x, y, x2, y2, plr);
             int edits = 0;
             for (int i = x; i <= x2; i++)
@@ -28,10 +31,9 @@ namespace WorldEdit.Commands
                 for (int j = y; j <= y2; j++)
                 {
                     ITile tile = Main.tile[i, j];
-                    if ((tile.wall == from)
-                     && Tools.CanSet(false, tile, to, select, expression, magicWand, i, j, plr))
+                    if (tile.wall == from && Tools.CanSet(false, tile, to, select, expression, magicWand, i, j, plr))
                     {
-                        tile.wall = (byte)to;
+                        tile.wall = (ushort)to;
                         edits++;
                     }
                 }
