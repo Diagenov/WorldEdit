@@ -7,8 +7,8 @@ namespace WorldEdit.Commands
 	{
 		private int liquid;
 
-		public Flood(int x, int y, int x2, int y2, MagicWand magicWand, TSPlayer plr, int liquid)
-			: base(x, y, x2, y2, magicWand, plr)
+		public Flood(int x, int y, int x2, int y2, TSPlayer plr, int liquid)
+			: base(x, y, x2, y2, plr)
 		{
 			this.liquid = liquid;
 		}
@@ -23,7 +23,7 @@ namespace WorldEdit.Commands
 				for (int j = y; j <= y2; j++)
 				{
 					var tile = Main.tile[i, j];
-					if ((!tile.active() || !Main.tileSolid[tile.type]) && magicWand.InSelection(i, j))
+					if ((!tile.active() || !Main.tileSolid[tile.type]))
 					{
 						tile.liquidType((byte)liquid);
 						tile.liquid = 255;

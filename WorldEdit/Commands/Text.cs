@@ -18,7 +18,7 @@ namespace WorldEdit.Commands
             if (!CanUseCommand()) { return; }
             Tools.PrepareUndo(x, y, x2, y2, plr);
 
-            WEPoint[,] frames = Tools.CreateStatueText(text, x2 - x + 1, y2 - y + 1);
+            var frames = Tools.CreateStatueText(text, x2 - x + 1, y2 - y + 1);
             for (int i = 0; i < frames.GetLength(0); i++)
             {
                 for (int j = 0; j < frames.GetLength(1); j++)
@@ -28,8 +28,8 @@ namespace WorldEdit.Commands
                     { continue; }
                     ITile tile = Main.tile[i + x, j + y];
                     tile.active(true);
-                    tile.frameX = frames[i, j].X;
-                    tile.frameY = frames[i, j].Y;
+                    tile.frameX = (short)frames[i, j].X;
+                    tile.frameY = (short)frames[i, j].Y;
                     tile.liquidType(0);
                     tile.liquid = 0;
                     tile.type = TileID.AlphabetStatues;

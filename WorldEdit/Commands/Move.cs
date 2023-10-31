@@ -12,8 +12,8 @@ namespace WorldEdit.Commands
         int right;
         Expression expression;
 
-        public Move(int x, int y, int x2, int y2, MagicWand magicWand, TSPlayer plr, int down, int right, Expression expression)
-            : base(x, y, x2, y2, magicWand, plr)
+        public Move(int x, int y, int x2, int y2, TSPlayer plr, int down, int right, Expression expression)
+            : base(x, y, x2, y2, plr)
         {
             this.down = down;
             this.right = right;
@@ -45,8 +45,7 @@ namespace WorldEdit.Commands
             {
                 for (int j = y; j <= y2; j++)
                 {
-                    if (magicWand.InSelection(i, j)
-                        && expression.Evaluate(Main.tile[i, j]))
+                    if (expression.Evaluate(Main.tile[i, j]))
                     {
                         Main.tile[i, j] = new Tile();
                         edits++;
@@ -61,10 +60,10 @@ namespace WorldEdit.Commands
                     var index1 = i - newX;
                     var index2 = j - newY;
 
-                    if (i < 0 || j < 0 || i >= Main.maxTilesX || j >= Main.maxTilesY
-                        || !magicWand.InSelection(i - right, j - down)
-                        || !expression.Evaluate(data.Tiles[index1, index2]))
-                    { continue; }
+                    if (i < 0 || j < 0 || i >= Main.maxTilesX || j >= Main.maxTilesY|| !expression.Evaluate(data.Tiles[index1, index2]))
+                    { 
+                        continue; 
+                    }
 
                     Main.tile[i, j] = data.Tiles[index1, index2];
                 }

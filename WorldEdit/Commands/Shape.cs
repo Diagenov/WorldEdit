@@ -2,6 +2,7 @@
 using System.Linq;
 using Terraria;
 using TShockAPI;
+using Microsoft.Xna.Framework;
 using WorldEdit.Expressions;
 
 namespace WorldEdit.Commands
@@ -16,10 +17,10 @@ namespace WorldEdit.Commands
         private bool filled;
         private int materialType;
 
-        public Shape(int x, int y, int x2, int y2, MagicWand magicWand, TSPlayer plr,
+        public Shape(int x, int y, int x2, int y2, TSPlayer plr,
             int shapeType, int rotateType, int flipType, bool wall, bool filled,
             int materialType, Expression expression)
-            : base(x, y, x2, y2, magicWand, plr, false)
+            : base(x, y, x2, y2, plr, false)
         {
             this.expression = expression ?? new TestExpression(new Test(t => true));
             this.shapeType = shapeType;
@@ -50,14 +51,13 @@ namespace WorldEdit.Commands
 
                 case 0:
                     {
-                        WEPoint[] points = Tools.CreateLine(x, y, x2, y2);
+                        var points = Tools.CreateLine(x, y, x2, y2);
                         if (wall)
                         {
-                            foreach (WEPoint p in points)
+                            foreach (var p in points)
                             {
                                 var tile = Main.tile[p.X, p.Y];
-                                if (Tools.CanSet(false, Main.tile[p.X, p.Y], materialType,
-                                    select, expression, magicWand, p.X, p.Y, plr))
+                                if (Tools.CanSet(false, Main.tile[p.X, p.Y], materialType, select, expression, p.X, p.Y, plr))
                                 {
                                     Main.tile[p.X, p.Y].wall = (ushort)materialType;
                                     edits++;
@@ -66,11 +66,10 @@ namespace WorldEdit.Commands
                         }
                         else
                         {
-                            foreach (WEPoint p in points)
+                            foreach (var p in points)
                             {
                                 var tile = Main.tile[p.X, p.Y];
-                                if (Tools.CanSet(true, Main.tile[p.X, p.Y], materialType,
-                                    select, expression, magicWand, p.X, p.Y, plr))
+                                if (Tools.CanSet(true, Main.tile[p.X, p.Y], materialType, select, expression, p.X, p.Y, plr))
                                 {
                                     SetTile(p.X, p.Y, materialType);
                                     edits++;
@@ -91,8 +90,7 @@ namespace WorldEdit.Commands
                             {
                                 for (int j = y; j <= y2; j++)
                                 {
-                                    if (Tools.CanSet(false, Main.tile[i, j], materialType,
-                                        select, expression, magicWand, i, j, plr)
+                                    if (Tools.CanSet(false, Main.tile[i, j], materialType, select, expression, i, j, plr)
                                         && (filled ? true : WorldEdit.Selections["border"](i, j, plr)))
                                     {
                                         Main.tile[i, j].wall = (ushort)materialType;
@@ -107,8 +105,7 @@ namespace WorldEdit.Commands
                             {
                                 for (int j = y; j <= y2; j++)
                                 {
-                                    if (Tools.CanSet(true, Main.tile[i, j], materialType,
-                                        select, expression, magicWand, i, j, plr)
+                                    if (Tools.CanSet(true, Main.tile[i, j], materialType, select, expression, i, j, plr)
                                         && (filled ? true : WorldEdit.Selections["border"](i, j, plr)))
                                     {
                                         SetTile(i, j, materialType);
@@ -135,8 +132,7 @@ namespace WorldEdit.Commands
                                 {
                                     for (int j = y; j <= y2; j++)
                                     {
-                                        if (Tools.CanSet(false, Main.tile[i, j], materialType,
-                                            select, expression, magicWand, i, j, plr)
+                                        if (Tools.CanSet(false, Main.tile[i, j], materialType, select, expression, i, j, plr)
                                             && WorldEdit.Selections["ellipse"](i, j, plr))
                                         {
                                             Main.tile[i, j].wall = (ushort)materialType;
@@ -151,8 +147,7 @@ namespace WorldEdit.Commands
                                 {
                                     for (int j = y; j <= y2; j++)
                                     {
-                                        if (Tools.CanSet(true, Main.tile[i, j], materialType,
-                                            select, expression, magicWand, i, j, plr)
+                                        if (Tools.CanSet(true, Main.tile[i, j], materialType, select, expression, i, j, plr)
                                             && WorldEdit.Selections["ellipse"](i, j, plr))
                                         {
                                             SetTile(i, j, materialType);
@@ -168,13 +163,12 @@ namespace WorldEdit.Commands
 
                         else
                         {
-                            WEPoint[] points = Tools.CreateEllipseOutline(x, y, x2, y2);
+                            var points = Tools.CreateEllipseOutline(x, y, x2, y2);
                             if (wall)
                             {
-                                foreach (WEPoint p in points)
+                                foreach (var p in points)
                                 {
-                                    if (Tools.CanSet(false, Main.tile[p.X, p.Y], materialType,
-                                        select, expression, magicWand, p.X, p.Y, plr))
+                                    if (Tools.CanSet(false, Main.tile[p.X, p.Y], materialType, select, expression, p.X, p.Y, plr))
                                     {
                                         Main.tile[p.X, p.Y].wall = (ushort)materialType;
                                         edits++;
@@ -183,10 +177,9 @@ namespace WorldEdit.Commands
                             }
                             else
                             {
-                                foreach (WEPoint p in points)
+                                foreach (var p in points)
                                 {
-                                    if (Tools.CanSet(true, Main.tile[p.X, p.Y], materialType,
-                                        select, expression, magicWand, p.X, p.Y, plr))
+                                    if (Tools.CanSet(true, Main.tile[p.X, p.Y], materialType, select, expression, p.X, p.Y, plr))
                                     {
                                         SetTile(p.X, p.Y, materialType);
                                         edits++;
@@ -205,7 +198,7 @@ namespace WorldEdit.Commands
                 case 3:
                 case 4:
                     {
-                        WEPoint[] points, line1, line2;
+                        Point[] points, line1, line2;
                         if (shapeType == 3)
                         {
                             switch (rotateType)
@@ -218,10 +211,10 @@ namespace WorldEdit.Commands
                                         points = Tools.CreateLine(center, y, x, y2)
                                          .Concat(Tools.CreateLine(center + ((x2 - x) % 2), y, x2, y2))
                                          .ToArray();
-                                        line1 = new WEPoint[]
+                                        line1 = new Point[]
                                         {
-                                            new WEPoint((short)x, (short)y2),
-                                            new WEPoint((short)x2, (short)y2)
+                                            new Point((short)x, (short)y2),
+                                            new Point((short)x2, (short)y2)
                                         };
                                         line2 = null;
                                         break;
@@ -236,10 +229,10 @@ namespace WorldEdit.Commands
                                         points = Tools.CreateLine(center, y2, x, y)
                                          .Concat(Tools.CreateLine(center + ((x2 - x) % 2), y2, x2, y))
                                          .ToArray();
-                                        line1 = new WEPoint[]
+                                        line1 = new Point[]
                                         {
-                                            new WEPoint((short)x, (short)y),
-                                            new WEPoint((short)x2, (short)y)
+                                            new Point((short)x, (short)y),
+                                            new Point((short)x2, (short)y)
                                         };
                                         line2 = null;
                                         break;
@@ -254,10 +247,10 @@ namespace WorldEdit.Commands
                                         points = Tools.CreateLine(x, center, x2, y)
                                          .Concat(Tools.CreateLine(x, center + ((y2 - y) % 2), x2, y2))
                                          .ToArray();
-                                        line1 = new WEPoint[]
+                                        line1 = new Point[]
                                         {
-                                            new WEPoint((short)x2, (short)y),
-                                            new WEPoint((short)x2, (short)y2)
+                                            new Point((short)x2, (short)y),
+                                            new Point((short)x2, (short)y2)
                                         };
                                         line2 = null;
                                         break;
@@ -272,10 +265,10 @@ namespace WorldEdit.Commands
                                         points = Tools.CreateLine(x2, center, x, y)
                                          .Concat(Tools.CreateLine(x2, center + ((x2 - x) % 2), x, y2))
                                          .ToArray();
-                                        line1 = new WEPoint[]
+                                        line1 = new Point[]
                                         {
-                                            new WEPoint((short)x, (short)y),
-                                            new WEPoint((short)x, (short)y2)
+                                            new Point((short)x, (short)y),
+                                            new Point((short)x, (short)y2)
                                         };
                                         line2 = null;
                                         break;
@@ -300,15 +293,15 @@ namespace WorldEdit.Commands
                                             case 0:
                                                 {
                                                     points = Tools.CreateLine(x, y2, x2, y);
-                                                    line1 = new WEPoint[]
+                                                    line1 = new Point[]
                                                     {
-                                                        new WEPoint((short)x, (short)y2),
-                                                        new WEPoint((short)x2, (short)y2)
+                                                        new Point((short)x, (short)y2),
+                                                        new Point((short)x2, (short)y2)
                                                     };
-                                                    line2 = new WEPoint[]
+                                                    line2 = new Point[]
                                                     {
-                                                        new WEPoint((short)x2, (short)y),
-                                                        new WEPoint((short)x2, (short)y2)
+                                                        new Point((short)x2, (short)y),
+                                                        new Point((short)x2, (short)y2)
                                                     };
                                                     break;
                                                 }
@@ -319,15 +312,15 @@ namespace WorldEdit.Commands
                                             case 1:
                                                 {
                                                     points = Tools.CreateLine(x, y, x2, y2);
-                                                    line1 = new WEPoint[]
+                                                    line1 = new Point[]
                                                     {
-                                                        new WEPoint((short)x, (short)y),
-                                                        new WEPoint((short)x2, (short)y)
+                                                        new Point((short)x, (short)y),
+                                                        new Point((short)x2, (short)y)
                                                     };
-                                                    line2 = new WEPoint[]
+                                                    line2 = new Point[]
                                                     {
-                                                        new WEPoint((short)x2, (short)y),
-                                                        new WEPoint((short)x2, (short)y2)
+                                                        new Point((short)x2, (short)y),
+                                                        new Point((short)x2, (short)y2)
                                                     };
                                                     break;
                                                 }
@@ -350,15 +343,15 @@ namespace WorldEdit.Commands
                                             case 0:
                                                 {
                                                     points = Tools.CreateLine(x, y, x2, y2);
-                                                    line1 = new WEPoint[]
+                                                    line1 = new Point[]
                                                     {
-                                                        new WEPoint((short)x, (short)y),
-                                                        new WEPoint((short)x, (short)y2)
+                                                        new Point((short)x, (short)y),
+                                                        new Point((short)x, (short)y2)
                                                     };
-                                                    line2 = new WEPoint[]
+                                                    line2 = new Point[]
                                                     {
-                                                        new WEPoint((short)x, (short)y2),
-                                                        new WEPoint((short)x2, (short)y2)
+                                                        new Point((short)x, (short)y2),
+                                                        new Point((short)x2, (short)y2)
                                                     };
                                                     break;
                                                 }
@@ -369,15 +362,15 @@ namespace WorldEdit.Commands
                                             case 1:
                                                 {
                                                     points = Tools.CreateLine(x, y2, x2, y);
-                                                    line1 = new WEPoint[]
+                                                    line1 = new Point[]
                                                     {
-                                                        new WEPoint((short)x, (short)y),
-                                                        new WEPoint((short)x, (short)y2)
+                                                        new Point((short)x, (short)y),
+                                                        new Point((short)x, (short)y2)
                                                     };
-                                                    line2 = new WEPoint[]
+                                                    line2 = new Point[]
                                                     {
-                                                        new WEPoint((short)x, (short)y),
-                                                        new WEPoint((short)x2, (short)y)
+                                                        new Point((short)x, (short)y),
+                                                        new Point((short)x2, (short)y)
                                                     };
                                                     break;
                                                 }
@@ -403,13 +396,12 @@ namespace WorldEdit.Commands
                                     {
                                         if (wall)
                                         {
-                                            foreach (WEPoint p in points)
+                                            foreach (var p in points)
                                             {
                                                 for (int y = p.Y; y <= y2; y++)
                                                 {
                                                     var tile = Main.tile[p.X, y];
-                                                    if (Tools.CanSet(false, Main.tile[p.X, y], materialType,
-                                                        select, expression, magicWand, p.X, y, plr))
+                                                    if (Tools.CanSet(false, Main.tile[p.X, y], materialType, select, expression, p.X, y, plr))
                                                     {
                                                         Main.tile[p.X, y].wall = (ushort)materialType;
                                                         edits++;
@@ -419,13 +411,12 @@ namespace WorldEdit.Commands
                                         }
                                         else
                                         {
-                                            foreach (WEPoint p in points)
+                                            foreach (var p in points)
                                             {
                                                 for (int y = p.Y; y <= y2; y++)
                                                 {
                                                     var tile = Main.tile[p.X, y];
-                                                    if (Tools.CanSet(true, Main.tile[p.X, y], materialType,
-                                                        select, expression, magicWand, p.X, y, plr))
+                                                    if (Tools.CanSet(true, Main.tile[p.X, y], materialType, select, expression, p.X, y, plr))
                                                     {
                                                         SetTile(p.X, y, materialType);
                                                         edits++;
@@ -443,13 +434,12 @@ namespace WorldEdit.Commands
                                     {
                                         if (wall)
                                         {
-                                            foreach (WEPoint p in points)
+                                            foreach (var p in points)
                                             {
                                                 for (int y = p.Y; y >= this.y; y--)
                                                 {
                                                     var tile = Main.tile[p.X, y];
-                                                    if (Tools.CanSet(false, Main.tile[p.X, y], materialType,
-                                                        select, expression, magicWand, p.X, y, plr))
+                                                    if (Tools.CanSet(false, Main.tile[p.X, y], materialType, select, expression, p.X, y, plr))
                                                     {
                                                         Main.tile[p.X, y].wall = (ushort)materialType;
                                                         edits++;
@@ -459,13 +449,12 @@ namespace WorldEdit.Commands
                                         }
                                         else
                                         {
-                                            foreach (WEPoint p in points)
+                                            foreach (var p in points)
                                             {
                                                 for (int y = p.Y; y >= this.y; y--)
                                                 {
                                                     var tile = Main.tile[p.X, y];
-                                                    if (Tools.CanSet(true, Main.tile[p.X, y], materialType,
-                                                        select, expression, magicWand, p.X, y, plr))
+                                                    if (Tools.CanSet(true, Main.tile[p.X, y], materialType, select, expression, p.X, y, plr))
                                                     {
                                                         SetTile(p.X, y, materialType);
                                                         edits++;
@@ -483,13 +472,12 @@ namespace WorldEdit.Commands
                                     {
                                         if (wall)
                                         {
-                                            foreach (WEPoint p in points)
+                                            foreach (var p in points)
                                             {
                                                 for (int x = p.X; x <= x2; x++)
                                                 {
                                                     var tile = Main.tile[x, p.Y];
-                                                    if (Tools.CanSet(false, Main.tile[x, p.Y], materialType,
-                                                        select, expression, magicWand, x, p.Y, plr))
+                                                    if (Tools.CanSet(false, Main.tile[x, p.Y], materialType, select, expression, x, p.Y, plr))
                                                     {
                                                         Main.tile[x, p.Y].wall = (ushort)materialType;
                                                         edits++;
@@ -499,13 +487,12 @@ namespace WorldEdit.Commands
                                         }
                                         else
                                         {
-                                            foreach (WEPoint p in points)
+                                            foreach (var p in points)
                                             {
                                                 for (int x = p.X; x <= x2; x++)
                                                 {
                                                     var tile = Main.tile[x, p.Y];
-                                                    if (Tools.CanSet(true, Main.tile[x, p.Y], materialType,
-                                                        select, expression, magicWand, x, p.Y, plr))
+                                                    if (Tools.CanSet(true, Main.tile[x, p.Y], materialType, select, expression, x, p.Y, plr))
                                                     {
                                                         SetTile(x, p.Y, materialType);
                                                         edits++;
@@ -523,13 +510,12 @@ namespace WorldEdit.Commands
                                     {
                                         if (wall)
                                         {
-                                            foreach (WEPoint p in points)
+                                            foreach (var p in points)
                                             {
                                                 for (int x = p.X; x >= this.x; x--)
                                                 {
                                                     var tile = Main.tile[x, p.Y];
-                                                    if (Tools.CanSet(false, Main.tile[x, p.Y], materialType,
-                                                        select, expression, magicWand, x, p.Y, plr))
+                                                    if (Tools.CanSet(false, Main.tile[x, p.Y], materialType, select, expression, x, p.Y, plr))
                                                     {
                                                         Main.tile[x, p.Y].wall = (ushort)materialType;
                                                         edits++;
@@ -539,13 +525,12 @@ namespace WorldEdit.Commands
                                         }
                                         else
                                         {
-                                            foreach (WEPoint p in points)
+                                            foreach (var p in points)
                                             {
                                                 for (int x = p.X; x >= this.x; x++)
                                                 {
                                                     var tile = Main.tile[x, p.Y];
-                                                    if (Tools.CanSet(true, Main.tile[x, p.Y], materialType,
-                                                        select, expression, magicWand, x, p.Y, plr))
+                                                    if (Tools.CanSet(true, Main.tile[x, p.Y], materialType, select, expression, x, p.Y, plr))
                                                     {
                                                         SetTile(x, p.Y, materialType);
                                                         edits++;
@@ -566,11 +551,10 @@ namespace WorldEdit.Commands
 
                             if (wall)
                             {
-                                foreach (WEPoint p in points)
+                                foreach (var p in points)
                                 {
                                     var tile = Main.tile[p.X, p.Y];
-                                    if (Tools.CanSet(false, Main.tile[p.X, p.Y], materialType,
-                                        select, expression, magicWand, p.X, p.Y, plr))
+                                    if (Tools.CanSet(false, Main.tile[p.X, p.Y], materialType, select, expression, p.X, p.Y, plr))
                                     {
                                         Main.tile[p.X, p.Y].wall = (ushort)materialType;
                                         edits++;
@@ -581,8 +565,7 @@ namespace WorldEdit.Commands
                                     for (int y = line1[0].Y; y <= line1[1].Y; y++)
                                     {
                                         var tile = Main.tile[x, y];
-                                        if (Tools.CanSet(true, Main.tile[x, y], materialType,
-                                            select, expression, magicWand, x, y, plr))
+                                        if (Tools.CanSet(true, Main.tile[x, y], materialType, select, expression, x, y, plr))
                                         {
                                             Main.tile[x, y].wall = (ushort)materialType;
                                             edits++;
@@ -596,8 +579,7 @@ namespace WorldEdit.Commands
                                         for (int y = line2[0].Y; y <= line2[1].Y; y++)
                                         {
                                             var tile = Main.tile[x, y];
-                                            if (Tools.CanSet(true, Main.tile[x, y], materialType,
-                                                select, expression, magicWand, x, y, plr))
+                                            if (Tools.CanSet(true, Main.tile[x, y], materialType, select, expression, x, y, plr))
                                             {
                                                 Main.tile[x, y].wall = (ushort)materialType;
                                                 edits++;
@@ -612,11 +594,10 @@ namespace WorldEdit.Commands
 
                             else
                             {
-                                foreach (WEPoint p in points)
+                                foreach (var p in points)
                                 {
                                     var tile = Main.tile[p.X, p.Y];
-                                    if (Tools.CanSet(true, Main.tile[p.X, p.Y], materialType,
-                                        select, expression, magicWand, p.X, p.Y, plr))
+                                    if (Tools.CanSet(true, Main.tile[p.X, p.Y], materialType, select, expression, p.X, p.Y, plr))
                                     {
                                         SetTile(p.X, p.Y, materialType);
                                         edits++;
@@ -627,8 +608,7 @@ namespace WorldEdit.Commands
                                     for (int y = line1[0].Y; y <= line1[1].Y; y++)
                                     {
                                         var tile = Main.tile[x, y];
-                                        if (Tools.CanSet(true, Main.tile[x, y], materialType,
-                                            select, expression, magicWand, x, y, plr))
+                                        if (Tools.CanSet(true, Main.tile[x, y], materialType, select, expression, x, y, plr))
                                         {
                                             SetTile(x, y, materialType);
                                             edits++;
@@ -642,8 +622,7 @@ namespace WorldEdit.Commands
                                         for (int y = line2[0].Y; y <= line2[1].Y; y++)
                                         {
                                             var tile = Main.tile[x, y];
-                                            if (Tools.CanSet(true, Main.tile[x, y], materialType,
-                                                select, expression, magicWand, x, y, plr))
+                                            if (Tools.CanSet(true, Main.tile[x, y], materialType, select, expression, x, y, plr))
                                             {
                                                 SetTile(x, y, materialType);
                                                 edits++;

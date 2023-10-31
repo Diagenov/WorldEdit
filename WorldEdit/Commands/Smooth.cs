@@ -8,8 +8,8 @@ namespace WorldEdit.Commands
 	{
 		private Expression expression;
 
-		public Smooth(int x, int y, int x2, int y2, MagicWand magicWand, TSPlayer plr, Expression expression)
-			: base(x, y, x2, y2, magicWand, plr)
+		public Smooth(int x, int y, int x2, int y2, TSPlayer plr, Expression expression)
+			: base(x, y, x2, y2, plr)
 		{
 			this.expression = expression ?? new TestExpression(new Test(t => true));
 		}
@@ -34,20 +34,12 @@ namespace WorldEdit.Commands
 				{
 					bool XY = Main.tile[i, j].active();
 					bool slope = (Main.tile[i, j].slope() == 0);
-					bool mXY = magicWand.dontCheck
-                                    ? Main.tile[i - 1, j].active()
-                                    : magicWand.InSelection(i - 1, j);
-					bool pXY = magicWand.dontCheck
-                                    ? Main.tile[i + 1, j].active()
-                                    : magicWand.InSelection(i + 1, j);
-                    bool XmY = magicWand.dontCheck
-                                    ? Main.tile[i, j - 1].active()
-                                    : magicWand.InSelection(i, j - 1);
-                    bool XpY = magicWand.dontCheck
-                                    ? Main.tile[i, j + 1].active()
-                                    : magicWand.InSelection(i, j + 1);
+					bool mXY = Main.tile[i - 1, j].active();
+					bool pXY = Main.tile[i + 1, j].active();
+                    bool XmY = Main.tile[i, j - 1].active();
+                    bool XpY = Main.tile[i, j + 1].active();
 
-                    if (XY && slope && expression.Evaluate(Main.tile[i, j]) && magicWand.InSelection(i, j))
+                    if (XY && slope && expression.Evaluate(Main.tile[i, j]))
 					{
 						if (mXY && XmY && !XpY && !pXY)
 						{

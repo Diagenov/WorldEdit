@@ -15,14 +15,9 @@ namespace WorldEdit.Commands
 		public int x2;
 		public int y;
 		public int y2;
-        public MagicWand magicWand;
         public bool minMaxPoints;
 
-        protected WECommand(int x, int y, int x2, int y2, TSPlayer plr)
-            : this(x, y, x2, y2, null, plr) { }
-
-        protected WECommand(int x, int y, int x2, int y2, MagicWand magicWand,
-            TSPlayer plr, bool minMaxPoints = true)
+        protected WECommand(int x, int y, int x2, int y2, TSPlayer plr, bool minMaxPoints = true)
 		{
 			this.plr = plr;
 			this.select = plr.GetPlayerInfo().Select ?? WorldEdit.Selections["normal"];
@@ -30,7 +25,6 @@ namespace WorldEdit.Commands
 			this.x2 = x2;
 			this.y = y;
 			this.y2 = y2;
-            this.magicWand = magicWand ?? new MagicWand();
             this.minMaxPoints = minMaxPoints;
 		}
 

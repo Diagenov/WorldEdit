@@ -11,8 +11,8 @@ namespace WorldEdit.Commands
 
         private Expression expression;
 
-		public PaintWall(int x, int y, int x2, int y2, MagicWand magicWand, TSPlayer plr, int color, bool coating, Expression expression)
-			: base(x, y, x2, y2, magicWand, plr)
+		public PaintWall(int x, int y, int x2, int y2, TSPlayer plr, int color, bool coating, Expression expression)
+			: base(x, y, x2, y2, plr)
 		{
 			this.color = color;
             this.coating = coating;
@@ -29,7 +29,7 @@ namespace WorldEdit.Commands
 				for (int j = y; j <= y2; j++)
 				{
 					var tile = Main.tile[i, j];
-					if (tile.wall > 0 && tile.wallColor() != color && select(i, j, plr) && expression.Evaluate(tile) && magicWand.InSelection(i, j))
+					if (tile.wall > 0 && tile.wallColor() != color && select(i, j, plr) && expression.Evaluate(tile))
 					{
                         if (color == 0)
                         {

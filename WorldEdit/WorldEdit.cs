@@ -80,15 +80,15 @@ namespace WorldEdit
 			ServerApi.Hooks.NetGetData.Register(this, OnGetData);
             TShockAPI.Hooks.GeneralHooks.ReloadEvent += OnReload;
 		}
-        private static void OnReload(TShockAPI.Hooks.ReloadEventArgs e)
+        
+		static void OnReload(TShockAPI.Hooks.ReloadEventArgs e)
         {
             Config = Config.Read(ConfigPath);
             Tools.MAX_UNDOS = Config.MaxUndoCount;
-            MagicWand.MaxPointCount = Config.MagicWandTileLimit;
             e?.Player?.SendSuccessMessage("[WorldEdit] Successfully reloaded config.");
         }
 
-		private void OnGetData(GetDataEventArgs e)
+		void OnGetData(GetDataEventArgs e)
 		{
 			if (e.Handled)
 				return;
@@ -96,7 +96,6 @@ namespace WorldEdit
 			switch (e.MsgID)
 			{
 				#region Packet 17 - Tile
-
 				case PacketTypes.Tile:
 					PlayerInfo info = TShock.Players[e.Msg.whoAmI].GetPlayerInfo();
 					if (info.Point != 0)
@@ -137,22 +136,6 @@ namespace WorldEdit
                                         TShock.Players[e.Msg.whoAmI].SendInfoMessage("Set region.");
                                     }
 								}
-                                else if (info.Point == 4)
-                                {
-                                    if (!MagicWand.GetMagicWandSelection(x, y,
-                                        info.SavedExpression,
-                                        TShock.Players[e.Msg.whoAmI], out MagicWand selection))
-                                    {
-                                        TShock.Players[e.Msg.whoAmI].SendErrorMessage("Can't " +
-                                            "start counting magic wand selection from this tile.");
-                                    }
-                                    else
-                                    {
-                                        info.MagicWand = selection;
-                                        TShock.Players[e.Msg.whoAmI].SendSuccessMessage("Set magic wand selection.");
-                                    }
-                                    info.SavedExpression = null;
-                                }
                                 info.Point = 0;
 								e.Handled = true;
 								TShock.Players[e.Msg.whoAmI].SendTileSquare(x, y, 3);
@@ -160,120 +143,114 @@ namespace WorldEdit
 						}
 					}
 					return;
-
 				#endregion
-				#region Packet 109 - MassWireOperation
 
+				#region Packet 109 - MassWireOperation
 				case PacketTypes.MassWireOperation:
 					PlayerInfo data = TShock.Players[e.Msg.whoAmI].GetPlayerInfo();
-					if (data.Point != 0)
+					if (data.Point == 0 && !data.Wand)
 					{
-						using (var reader = new BinaryReader(new MemoryStream(e.Msg.readBuffer, e.Index, e.Length)))
-						{
-							int startX = reader.ReadInt16();
-							int startY = reader.ReadInt16();
-							int endX = reader.ReadInt16();
-							int endY = reader.ReadInt16();
-
-							if (startX >= 0 && startY >= 0 && endX >= 0 && endY >= 0 && startX < Main.maxTilesX && startY < Main.maxTilesY && endX < Main.maxTilesX && endY < Main.maxTilesY)
-                            {
-                                if (data.Point == 4)
-                                {
-                                    if (!MagicWand.GetMagicWandSelection(startX, startY,
-                                        data.SavedExpression,
-                                        TShock.Players[e.Msg.whoAmI], out MagicWand selection))
-                                    {
-                                        TShock.Players[e.Msg.whoAmI].SendErrorMessage("Can't " +
-                                            "start counting magic wand selection from this tile.");
-                                    }
-                                    else
-                                    {
-                                        data.MagicWand = selection;
-                                        TShock.Players[e.Msg.whoAmI].SendSuccessMessage("Set magic wand selection.");
-                                    }
-                                    data.SavedExpression = null;
-                                }
-                                else if (startX == endX && startY == endY)
-								{
-									// Set a single point
-									if (data.Point == 1)
-									{
-										data.X = startX;
-										data.Y = startY;
-										TShock.Players[e.Msg.whoAmI].SendInfoMessage("Set point 1.");
-									}
-									else if (data.Point == 2)
-									{
-										data.X2 = startX;
-										data.Y2 = startY;
-										TShock.Players[e.Msg.whoAmI].SendInfoMessage("Set point 2.");
-									}
-									else if (data.Point == 3)
-									{
-										List<string> regions = TShock.Regions.InAreaRegionName(startX, startY).ToList();
-										if (regions.Count == 0)
-										{
-											TShock.Players[e.Msg.whoAmI].SendErrorMessage("No region exists there.");
-										}
-										else
-										{
-											Region curReg = TShock.Regions.GetRegionByName(regions[0]);
-											data.X = curReg.Area.Left;
-											data.Y = curReg.Area.Top;
-											data.X2 = curReg.Area.Right;
-											data.Y2 = curReg.Area.Bottom;
-											TShock.Players[e.Msg.whoAmI].SendInfoMessage("Set region.");
-										}
-                                    }
-                                }
-								else
-								{
-									// Set both points at the same time
-									if (data.Point == 1 || data.Point == 2)
-									{
-										data.X = startX;
-										data.Y = startY;
-										data.X2 = endX;
-										data.Y2 = endY;
-										TShock.Players[e.Msg.whoAmI].SendInfoMessage("Set area.");
-									}
-									else if (data.Point == 3)
-									{
-										// Set topmost region inside the selection
-										int x = Math.Min(startX, endX);
-										int y = Math.Min(startY, endY);
-										int width = Math.Max(startX, endX) - x;
-										int height = Math.Max(startY, endY) - y;
-										Rectangle rect = new Rectangle(x, y, width, height);
-										List<Region> regions = TShock.Regions.Regions.FindAll(r => rect.Intersects(r.Area));
-										if (regions.Count == 0)
-										{
-											TShock.Players[e.Msg.whoAmI].SendErrorMessage("No region exists there.");
-										}
-										else
-										{
-											Region curReg = TShock.Regions.GetTopRegion(regions);
-											data.X = curReg.Area.Left;
-											data.Y = curReg.Area.Top;
-											data.X2 = curReg.Area.Right;
-											data.Y2 = curReg.Area.Bottom;
-											TShock.Players[e.Msg.whoAmI].SendInfoMessage("Set region.");
-										}
-                                    }
-                                }
-                                data.Point = 0;
-								e.Handled = true;
-							}
-						}
+						return;
 					}
-					return;
+                    using (var reader = new BinaryReader(new MemoryStream(e.Msg.readBuffer, e.Index, e.Length)))
+                    {
+                        int startX = reader.ReadInt16();
+                        int startY = reader.ReadInt16();
+                        int endX = reader.ReadInt16();
+                        int endY = reader.ReadInt16();
 
+                        if (startX < 0 || startY < 0 || endX < 0 || endY < 0 || startX >= Main.maxTilesX || startY >= Main.maxTilesY || endX >= Main.maxTilesX || endY >= Main.maxTilesY)
+						{
+							return;
+						}
+
+						if (data.Wand)
+						{
+                            data.X = startX;
+                            data.Y = startY;
+                            data.X2 = endX;
+                            data.Y2 = endY;
+                            TShock.Players[e.Msg.whoAmI].SendInfoMessage("Set area.");
+                        }
+                        else if (startX == endX && startY == endY)
+                        {
+                            // Set a single point
+                            if (data.Point == 1)
+                            {
+                                data.X = startX;
+                                data.Y = startY;
+                                TShock.Players[e.Msg.whoAmI].SendInfoMessage("Set point 1.");
+                            }
+                            else if (data.Point == 2)
+                            {
+                                data.X2 = startX;
+                                data.Y2 = startY;
+                                TShock.Players[e.Msg.whoAmI].SendInfoMessage("Set point 2.");
+                            }
+                            else if (data.Point == 3)
+                            {
+                                List<string> regions = TShock.Regions.InAreaRegionName(startX, startY).ToList();
+                                if (regions.Count == 0)
+                                {
+                                    TShock.Players[e.Msg.whoAmI].SendErrorMessage("No region exists there.");
+                                }
+                                else
+                                {
+                                    Region curReg = TShock.Regions.GetRegionByName(regions[0]);
+                                    data.X = curReg.Area.Left;
+                                    data.Y = curReg.Area.Top;
+                                    data.X2 = curReg.Area.Right;
+                                    data.Y2 = curReg.Area.Bottom;
+                                    TShock.Players[e.Msg.whoAmI].SendInfoMessage("Set region.");
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // Set both points at the same time
+                            if (data.Point == 1 || data.Point == 2)
+                            {
+                                data.X = startX;
+                                data.Y = startY;
+                                data.X2 = endX;
+                                data.Y2 = endY;
+                                TShock.Players[e.Msg.whoAmI].SendInfoMessage("Set area.");
+                            }
+                            else if (data.Point == 3)
+                            {
+                                // Set topmost region inside the selection
+                                int x = Math.Min(startX, endX);
+                                int y = Math.Min(startY, endY);
+                                int width = Math.Max(startX, endX) - x;
+                                int height = Math.Max(startY, endY) - y;
+                                Rectangle rect = new Rectangle(x, y, width, height);
+                                List<Region> regions = TShock.Regions.Regions.FindAll(r => rect.Intersects(r.Area));
+                                if (regions.Count == 0)
+                                {
+                                    TShock.Players[e.Msg.whoAmI].SendErrorMessage("No region exists there.");
+                                }
+                                else
+                                {
+                                    Region curReg = TShock.Regions.GetTopRegion(regions);
+                                    data.X = curReg.Area.Left;
+                                    data.Y = curReg.Area.Top;
+                                    data.X2 = curReg.Area.Right;
+                                    data.Y2 = curReg.Area.Bottom;
+                                    TShock.Players[e.Msg.whoAmI].SendInfoMessage("Set region.");
+                                }
+                            }
+                        }
+                        data.Point = 0;
+                        e.Handled = true;
+                    }
+                    return;
 					#endregion
 			}
 		}
 
-		private string lockFilePath_Update_1_4 = Path.Combine(WorldEditFolderName, "1.4.0.lock");
-		private void OnPostInitialize(EventArgs e)
+		string lockFilePath_Update_1_4 = Path.Combine(WorldEditFolderName, "1.4.0.lock");
+		
+		void OnPostInitialize(EventArgs e)
 		{
 			if (!File.Exists(lockFilePath_Update_1_4))
 			{
@@ -284,7 +261,8 @@ namespace WorldEdit
 				TShock.Log.ConsoleInfo("Do not delete 1.4.0.lock inside worldedit folder; this message will only show once.");
 			}
 		}
-		private void OnInitialize(EventArgs e)
+		
+		void OnInitialize(EventArgs e)
 		{
 			var lockFilePathOldVersion = Path.Combine(WorldEditFolderName, "deleted.lock");
 
@@ -357,10 +335,10 @@ namespace WorldEdit
 			{
 				HelpText = "Floods liquids in the worldedit selection."
 			});
-			TShockAPI.Commands.ChatCommands.Add(new Command("worldedit.magic.wand", MagicWandTool, "/magicwand", "/mwand")
-			{
-				HelpText = "Creates worldedit selection from contiguous tiles that are matching boolean expression."
-			});
+            TShockAPI.Commands.ChatCommands.Add(new Command("worldedit.wand", Wand, "/wand")
+            {
+                HelpText = "Enables/disables automatic worldedit selection using [i:3611]."
+            });
 			TShockAPI.Commands.ChatCommands.Add(new Command("worldedit.utils.killempty", KillEmpty, "/killempty")
 			{
 				HelpText = "Deletes empty signs and/or chests (only entities, doesn't remove tiles)."
@@ -402,11 +380,11 @@ namespace WorldEdit
 			{
 				HelpText = "Pastes the clipboard to the worldedit selection with certain conditions."
 			});
-			TShockAPI.Commands.ChatCommands.Add(new Command("worldedit.selection.point", Point1, "/point1", "/p1", "p1")
+			TShockAPI.Commands.ChatCommands.Add(new Command("worldedit.selection.point", Point1, "/point1", "/p1")
 			{
 				HelpText = "Sets the positions of the worldedit selection's first point."
 			});
-			TShockAPI.Commands.ChatCommands.Add(new Command("worldedit.selection.point", Point2, "/point2", "/p2", "p2")
+			TShockAPI.Commands.ChatCommands.Add(new Command("worldedit.selection.point", Point2, "/point2", "/p2")
 			{
 				HelpText = "Sets the positions of the worldedit selection's second point."
 			});
@@ -685,7 +663,7 @@ namespace WorldEdit
 			ThreadPool.QueueUserWorkItem(QueueCallback);
 		}
 
-		private void QueueCallback(object context)
+		void QueueCallback(object context)
 		{
 			while (!Netplay.Disconnect)
 			{
@@ -713,7 +691,7 @@ namespace WorldEdit
 			}
 		}
 
-        private void EditConfig(CommandArgs e)
+        void EditConfig(CommandArgs e)
         {
             if (e.Parameters.Count < 1 || e.Parameters.Count > 2)
             {
@@ -827,7 +805,7 @@ namespace WorldEdit
             }
         }
 
-		private void Activate(CommandArgs e)
+		void Activate(CommandArgs e)
 		{
 			if (e.Parameters.Count != 1)
 			{
@@ -930,7 +908,7 @@ namespace WorldEdit
 			_commandQueue.Add(new Activate(info.X, info.Y, info.X2, info.Y2, e.Player, action));
 		}
 
-        private void Actuator(CommandArgs e)
+        void Actuator(CommandArgs e)
         {
             string param = (e.Parameters.Count == 0) ? "" : e.Parameters[0].ToLowerInvariant();
             if (param != "off" && param != "on")
@@ -956,10 +934,10 @@ namespace WorldEdit
                 }
             }
 
-            _commandQueue.Add(new Actuator(info.X, info.Y, info.X2, info.Y2, info.MagicWand, e.Player, expression, remove));
+            _commandQueue.Add(new Actuator(info.X, info.Y, info.X2, info.Y2, e.Player, expression, remove));
         }
 
-		private void All(CommandArgs e)
+		void All(CommandArgs e)
 		{
 			PlayerInfo info = e.Player.GetPlayerInfo();
 			info.X = info.Y = 0;
@@ -968,7 +946,7 @@ namespace WorldEdit
 			e.Player.SendSuccessMessage("Selected all tiles.");
 		}
 
-		private void Biome(CommandArgs e)
+		void Biome(CommandArgs e)
 		{
 			if (e.Parameters.Count != 2)
 			{
@@ -990,7 +968,7 @@ namespace WorldEdit
 				_commandQueue.Add(new Biome(info.X, info.Y, info.X2, info.Y2, e.Player, biome1, biome2));
 		}
 
-		private void Copy(CommandArgs e)
+		void Copy(CommandArgs e)
 		{
 			PlayerInfo info = e.Player.GetPlayerInfo();
 			if (info.X == -1 || info.Y == -1 || info.X2 == -1 || info.Y2 == -1)
@@ -999,7 +977,7 @@ namespace WorldEdit
 				_commandQueue.Add(new Copy(info.X, info.Y, info.X2, info.Y2, e.Player, null));
 		}
 
-		private void Cut(CommandArgs e)
+		void Cut(CommandArgs e)
 		{
             if (e.Player.Account == null)
             {
@@ -1013,7 +991,7 @@ namespace WorldEdit
 				_commandQueue.Add(new Cut(info.X, info.Y, info.X2, info.Y2, e.Player));
 		}
 
-		private void Drain(CommandArgs e)
+		void Drain(CommandArgs e)
 		{
 			PlayerInfo info = e.Player.GetPlayerInfo();
 			if (info.X == -1 || info.Y == -1 || info.X2 == -1 || info.Y2 == -1)
@@ -1022,7 +1000,7 @@ namespace WorldEdit
 				_commandQueue.Add(new Drain(info.X, info.Y, info.X2, info.Y2, e.Player));
         }
 
-        private void Fill(CommandArgs e)
+        void Fill(CommandArgs e)
         {
             PlayerInfo info = e.Player.GetPlayerInfo();
             if (info.X == -1 || info.Y == -1 || info.X2 == -1 || info.Y2 == -1)
@@ -1059,10 +1037,10 @@ namespace WorldEdit
             }
             else { Parser.TryParseTree(new string[] { "=>", "!t" }, out expression); }
 
-            _commandQueue.Add(new Set(info.X, info.Y, info.X2, info.Y2, info.MagicWand, e.Player, tiles[0], expression));
+            _commandQueue.Add(new Set(info.X, info.Y, info.X2, info.Y2, e.Player, tiles[0], expression));
         }
 
-        private void FillWall(CommandArgs e)
+        void FillWall(CommandArgs e)
         {
             PlayerInfo info = e.Player.GetPlayerInfo();
             if (info.X == -1 || info.Y == -1 || info.X2 == -1 || info.Y2 == -1)
@@ -1099,10 +1077,10 @@ namespace WorldEdit
             }
             else { Parser.TryParseTree(new string[] { "=>", "!w" }, out expression); }
 
-            _commandQueue.Add(new SetWall(info.X, info.Y, info.X2, info.Y2, info.MagicWand, e.Player, walls[0], expression));
+            _commandQueue.Add(new SetWall(info.X, info.Y, info.X2, info.Y2, e.Player, walls[0], expression));
         }
 
-        private void FixGhosts(CommandArgs e)
+        void FixGhosts(CommandArgs e)
 		{
 			PlayerInfo info = e.Player.GetPlayerInfo();
 			if (info.X == -1 || info.Y == -1 || info.X2 == -1 || info.Y2 == -1)
@@ -1111,7 +1089,7 @@ namespace WorldEdit
 				_commandQueue.Add(new FixGhosts(info.X, info.Y, info.X2, info.Y2, e.Player));
 		}
 
-		private void FixGrass(CommandArgs e)
+		void FixGrass(CommandArgs e)
 		{
 			PlayerInfo info = e.Player.GetPlayerInfo();
 			if (info.X == -1 || info.Y == -1 || info.X2 == -1 || info.Y2 == -1)
@@ -1120,7 +1098,7 @@ namespace WorldEdit
 				_commandQueue.Add(new FixGrass(info.X, info.Y, info.X2, info.Y2, e.Player));
 		}
 
-		private void FixHalves(CommandArgs e)
+		void FixHalves(CommandArgs e)
 		{
 			PlayerInfo info = e.Player.GetPlayerInfo();
 			if (info.X == -1 || info.Y == -1 || info.X2 == -1 || info.Y2 == -1)
@@ -1129,7 +1107,7 @@ namespace WorldEdit
 				_commandQueue.Add(new FixHalves(info.X, info.Y, info.X2, info.Y2, e.Player));
 		}
 
-		private void FixSlopes(CommandArgs e)
+		void FixSlopes(CommandArgs e)
 		{
 			PlayerInfo info = e.Player.GetPlayerInfo();
 			if (info.X == -1 || info.Y == -1 || info.X2 == -1 || info.Y2 == -1)
@@ -1138,7 +1116,7 @@ namespace WorldEdit
 				_commandQueue.Add(new FixSlopes(info.X, info.Y, info.X2, info.Y2, e.Player));
 		}
 
-		private void Flood(CommandArgs e)
+		void Flood(CommandArgs e)
 		{
 			if (e.Parameters.Count != 1)
 			{
@@ -1160,10 +1138,10 @@ namespace WorldEdit
 			PlayerInfo info = e.Player.GetPlayerInfo();
 			if (info.X == -1 || info.Y == -1 || info.X2 == -1 || info.Y2 == -1)
 				e.Player.SendErrorMessage("Invalid selection!");
-			_commandQueue.Add(new Flood(info.X, info.Y, info.X2, info.Y2, info.MagicWand, e.Player, liquid));
+			_commandQueue.Add(new Flood(info.X, info.Y, info.X2, info.Y2, e.Player, liquid));
 		}
 
-		private void Flip(CommandArgs e)
+		void Flip(CommandArgs e)
         {
             if (e.Player.Account == null)
             {
@@ -1194,65 +1172,7 @@ namespace WorldEdit
 			}
 		}
 
-        private void MagicWandTool(CommandArgs e)
-        {
-            string error = "Invalid syntax! Proper syntax: //magicwand [<X> <Y>] => boolean expr...";
-            if (e.Parameters.Count < 2)
-            {
-                e.Player.SendErrorMessage(error);
-                return;
-            }
-
-            int skip = 0, x = -1, y = -1;
-            if (e.Parameters[0] != "=>")
-            {
-                if (e.Parameters.Count < 4)
-                {
-                    e.Player.SendErrorMessage(error);
-                    return;
-                }
-
-                if (!int.TryParse(e.Parameters[0], out x)
-                    || !int.TryParse(e.Parameters[1], out y)
-                    || x < 0 || y < 0 || x >= Main.maxTilesX || y >= Main.maxTilesY)
-                {
-                    e.Player.SendErrorMessage(error);
-                    return;
-                }
-                skip = 2;
-            }
-
-            if (!Parser.TryParseTree(e.Parameters.Skip(skip), out Expression expression))
-            {
-                e.Player.SendErrorMessage("Invalid expression!");
-                return;
-            }
-
-            PlayerInfo info = e.Player.GetPlayerInfo();
-            if (x != -1 && y != -1)
-            {
-                if (!MagicWand.GetMagicWandSelection(x, y,
-                    expression, e.Player, out MagicWand selection))
-                {
-                    e.Player.SendErrorMessage("Can't " +
-                        "start counting magic wand selection from this tile.");
-                }
-                else
-                {
-                    info.MagicWand = selection;
-                    e.Player.SendSuccessMessage("Set magic wand selection.");
-                }
-                info.SavedExpression = null;
-            }
-            else
-            {
-                info.SavedExpression = expression;
-                info.Point = 4;
-                e.Player.SendInfoMessage("Modify a block to count hard selection.");
-            }
-        }
-
-        private void KillEmpty(CommandArgs e)
+        void KillEmpty(CommandArgs e)
         {
             byte action;
             switch (e.Parameters.ElementAtOrDefault(0)?.ToLower())
@@ -1290,7 +1210,7 @@ namespace WorldEdit
             _commandQueue.Add(new KillEmpty(info.X, info.Y, info.X2, info.Y2, e.Player, action));
         }
 
-        private void Move(CommandArgs e)
+        void Move(CommandArgs e)
         {
             if (e.Parameters.Count < 2)
             {
@@ -1322,10 +1242,10 @@ namespace WorldEdit
                 }
             }
 
-            _commandQueue.Add(new Move(info.X, info.Y, info.X2, info.Y2, info.MagicWand, e.Player, down, right, expression));
+            _commandQueue.Add(new Move(info.X, info.Y, info.X2, info.Y2, e.Player, down, right, expression));
         }
 
-        private void Mow(CommandArgs e)
+        void Mow(CommandArgs e)
 		{
 			PlayerInfo info = e.Player.GetPlayerInfo();
 			if (info.X == -1 || info.Y == -1 || info.X2 == -1 || info.Y2 == -1)
@@ -1334,7 +1254,7 @@ namespace WorldEdit
 				_commandQueue.Add(new Mow(info.X, info.Y, info.X2, info.Y2, e.Player));
 		}
 
-		private void Near(CommandArgs e)
+		void Near(CommandArgs e)
 		{
 			if (e.Parameters.Count != 1)
 			{
@@ -1357,7 +1277,7 @@ namespace WorldEdit
 			e.Player.SendSuccessMessage("Selected tiles around you!");
 		}
 
-		private void Outline(CommandArgs e)
+		void Outline(CommandArgs e)
 		{
 			if (e.Parameters.Count < 3)
 			{
@@ -1407,12 +1327,12 @@ namespace WorldEdit
 							return;
 						}
 					}
-					_commandQueue.Add(new Outline(info.X, info.Y, info.X2, info.Y2, info.MagicWand, e.Player, tiles[0], colors[0], state, coating, expression));
+					_commandQueue.Add(new Outline(info.X, info.Y, info.X2, info.Y2, e.Player, tiles[0], colors[0], state, coating, expression));
 				}
 			}
 		}
 
-		private void OutlineWall(CommandArgs e)
+		void OutlineWall(CommandArgs e)
 		{
 			if (e.Parameters.Count < 2)
 			{
@@ -1449,12 +1369,12 @@ namespace WorldEdit
 							return;
 						}
 					}
-					_commandQueue.Add(new OutlineWall(info.X, info.Y, info.X2, info.Y2, info.MagicWand, e.Player, walls[0], colors[0], coating, expression));
+					_commandQueue.Add(new OutlineWall(info.X, info.Y, info.X2, info.Y2, e.Player, walls[0], colors[0], coating, expression));
 				}
 			}
 		}
 
-		private void Paint(CommandArgs e)
+		void Paint(CommandArgs e)
 		{
 			if (e.Parameters.Count == 0)
 			{
@@ -1484,11 +1404,11 @@ namespace WorldEdit
 						return;
 					}
 				}
-				_commandQueue.Add(new Paint(info.X, info.Y, info.X2, info.Y2, info.MagicWand, e.Player, colors[0], coating, expression));
+				_commandQueue.Add(new Paint(info.X, info.Y, info.X2, info.Y2, e.Player, colors[0], coating, expression));
 			}
 		}
 
-		private void PaintWall(CommandArgs e)
+		void PaintWall(CommandArgs e)
 		{
 			if (e.Parameters.Count == 0)
 			{
@@ -1518,11 +1438,11 @@ namespace WorldEdit
 						return;
 					}
 				}
-				_commandQueue.Add(new PaintWall(info.X, info.Y, info.X2, info.Y2, info.MagicWand, e.Player, colors[0], coating, expression));
+				_commandQueue.Add(new PaintWall(info.X, info.Y, info.X2, info.Y2, e.Player, colors[0], coating, expression));
 			}
 		}
 
-		private void Paste(CommandArgs e)
+		void Paste(CommandArgs e)
         {
             if (e.Player.Account == null)
             {
@@ -1586,7 +1506,7 @@ namespace WorldEdit
 			}
         }
 
-        private void SPaste(CommandArgs e)
+        void SPaste(CommandArgs e)
         {
             if (e.Player.Account == null)
             {
@@ -1667,7 +1587,7 @@ namespace WorldEdit
             }
         }
 
-        private void Point1(CommandArgs e)
+        void Point1(CommandArgs e)
 		{
 			PlayerInfo info = e.Player.GetPlayerInfo();
 			if (e.Parameters.Count == 0)
@@ -1700,7 +1620,7 @@ namespace WorldEdit
 			e.Player.SendInfoMessage("Set point 1.");
 		}
 
-		private void Point2(CommandArgs e)
+		void Point2(CommandArgs e)
 		{
 			PlayerInfo info = e.Player.GetPlayerInfo();
 			if (e.Parameters.Count == 0)
@@ -1733,7 +1653,19 @@ namespace WorldEdit
 			e.Player.SendInfoMessage("Set point 2.");
 		}
 
-		private void Redo(CommandArgs e)
+		void Wand(CommandArgs e)
+		{
+			if (!e.Player.RealPlayer)
+			{
+				e.Player.SendErrorMessage("You must use this command in-game.");
+				return;
+			}
+            var info = e.Player.GetPlayerInfo();
+			var text = (info.Wand = !info.Wand) ? "en" : "dis";
+            e.Player.SendInfoMessage($"Wand mode {text}abled.");
+        }
+
+		void Redo(CommandArgs e)
         {
             if (e.Player.Account == null)
             {
@@ -1771,7 +1703,7 @@ namespace WorldEdit
 			_commandQueue.Add(new Redo(e.Player, ID, steps));
 		}
 
-		private void RegionCmd(CommandArgs e)
+		void RegionCmd(CommandArgs e)
 		{
 			if (e.Parameters.Count > 1)
 			{
@@ -1801,7 +1733,7 @@ namespace WorldEdit
 			}
         }
 
-        private void Replace(CommandArgs e)
+        void Replace(CommandArgs e)
         {
             if (e.Parameters.Count < 2)
             {
@@ -1853,7 +1785,7 @@ namespace WorldEdit
             _commandQueue.Add(new Replace(info.X, info.Y, info.X2, info.Y2, e.Player, tilesFrom[0], tilesTo[0], expression));
         }
 
-        private void ReplaceWall(CommandArgs e)
+        void ReplaceWall(CommandArgs e)
         {
             if (e.Parameters.Count < 2)
             {
@@ -1905,7 +1837,7 @@ namespace WorldEdit
             _commandQueue.Add(new ReplaceWall(info.X, info.Y, info.X2, info.Y2, e.Player, wallsFrom[0], wallsTo[0], expression));
         }
 
-        private void Resize(CommandArgs e)
+        void Resize(CommandArgs e)
 		{
 			if (e.Parameters.Count != 2)
 			{
@@ -1965,7 +1897,7 @@ namespace WorldEdit
 			e.Player.SendSuccessMessage("Resized selection.");
 		}
 
-		private void Rotate(CommandArgs e)
+		void Rotate(CommandArgs e)
         {
             if (e.Player.Account == null)
             {
@@ -1990,7 +1922,7 @@ namespace WorldEdit
 				_commandQueue.Add(new Rotate(e.Player, degrees));
 		}
 
-		private void Scale(CommandArgs e)
+		void Scale(CommandArgs e)
         {
             if (e.Player.Account == null)
             {
@@ -2015,7 +1947,7 @@ namespace WorldEdit
 			_commandQueue.Add(new Scale(e.Player, (e.Parameters[0] == "+"), scale));
 		}
 
-		private void Schematic(CommandArgs e)
+		void Schematic(CommandArgs e)
         {
             const string fileFormat = "schematic-{0}.dat";
 
@@ -2353,7 +2285,7 @@ namespace WorldEdit
 			}
 		}
 
-		private void Select(CommandArgs e)
+		void Select(CommandArgs e)
 		{
 			if (e.Parameters.Count != 1)
 			{
@@ -2380,7 +2312,7 @@ namespace WorldEdit
 			e.Player.SendSuccessMessage("Set selection type to '{0}'.", selection);
 		}
 
-		private void Set(CommandArgs e)
+		void Set(CommandArgs e)
 		{
 			if (e.Parameters.Count == 0)
 			{
@@ -2410,11 +2342,11 @@ namespace WorldEdit
 						return;
 					}
 				}
-				_commandQueue.Add(new Set(info.X, info.Y, info.X2, info.Y2, info.MagicWand, e.Player, tiles[0], expression));
+				_commandQueue.Add(new Set(info.X, info.Y, info.X2, info.Y2, e.Player, tiles[0], expression));
 			}
 		}
 
-		private void SetWall(CommandArgs e)
+		void SetWall(CommandArgs e)
 		{
 			if (e.Parameters.Count == 0)
 			{
@@ -2444,11 +2376,11 @@ namespace WorldEdit
 						return;
 					}
 				}
-				_commandQueue.Add(new SetWall(info.X, info.Y, info.X2, info.Y2, info.MagicWand, e.Player, walls[0], expression));
+				_commandQueue.Add(new SetWall(info.X, info.Y, info.X2, info.Y2, e.Player, walls[0], expression));
 			}
 		}
 
-		private void SetGrass(CommandArgs e)
+		void SetGrass(CommandArgs e)
 		{
 			if (e.Parameters.Count == 0)
 			{
@@ -2478,10 +2410,10 @@ namespace WorldEdit
 				}
 			}
 
-			_commandQueue.Add(new SetGrass(info.X, info.Y, info.X2, info.Y2, info.MagicWand, e.Player, e.Parameters[0].ToLowerInvariant(), expression));
+			_commandQueue.Add(new SetGrass(info.X, info.Y, info.X2, info.Y2, e.Player, e.Parameters[0].ToLowerInvariant(), expression));
 		}
 
-		private void SetWire(CommandArgs e)
+		void SetWire(CommandArgs e)
 		{
 			if (e.Parameters.Count < 2)
 			{
@@ -2520,10 +2452,10 @@ namespace WorldEdit
 					return;
 				}
 			}
-			_commandQueue.Add(new SetWire(info.X, info.Y, info.X2, info.Y2, info.MagicWand, e.Player, wire, state, expression));
+			_commandQueue.Add(new SetWire(info.X, info.Y, info.X2, info.Y2, e.Player, wire, state, expression));
 		}
 
-        private void Shape(CommandArgs e)
+        void Shape(CommandArgs e)
         {
             bool wall = false, filled = false;
             switch (e.Message.Split(' ')[0].Substring(6).ToLower())
@@ -2753,10 +2685,10 @@ namespace WorldEdit
                 }
             }
             
-            _commandQueue.Add(new Shape(info.X, info.Y, info.X2, info.Y2, info.MagicWand, e.Player, type, rotateType, flipType, wall, filled, materialType, expression));
+            _commandQueue.Add(new Shape(info.X, info.Y, info.X2, info.Y2, e.Player, type, rotateType, flipType, wall, filled, materialType, expression));
         }
 
-        private void Size(CommandArgs e)
+        void Size(CommandArgs e)
         {
             switch (e.Parameters.ElementAtOrDefault(0)?.ToLower())
             {
@@ -2824,7 +2756,7 @@ namespace WorldEdit
             }
         }
 
-		private void Slope(CommandArgs e)
+		void Slope(CommandArgs e)
 		{
 			if (e.Parameters.Count == 0)
 			{
@@ -2853,11 +2785,11 @@ namespace WorldEdit
 						return;
 					}
 				}
-				_commandQueue.Add(new Slope(info.X, info.Y, info.X2, info.Y2, info.MagicWand, e.Player, slope, expression));
+				_commandQueue.Add(new Slope(info.X, info.Y, info.X2, info.Y2, e.Player, slope, expression));
 			}
 		}
 
-		private void SlopeDelete(CommandArgs e)
+		void SlopeDelete(CommandArgs e)
 		{
 			int slope = 255;
 			Expression expression = null;
@@ -2886,10 +2818,10 @@ namespace WorldEdit
 				}
 			}
 
-			_commandQueue.Add(new SlopeDelete(info.X, info.Y, info.X2, info.Y2, info.MagicWand, e.Player, slope, expression));
+			_commandQueue.Add(new SlopeDelete(info.X, info.Y, info.X2, info.Y2, e.Player, slope, expression));
 		}
 
-		private void Smooth(CommandArgs e)
+		void Smooth(CommandArgs e)
 		{
 			PlayerInfo info = e.Player.GetPlayerInfo();
 			if (info.X == -1 || info.Y == -1 || info.X2 == -1 || info.Y2 == -1)
@@ -2906,10 +2838,10 @@ namespace WorldEdit
 				return;
 			}
 
-			_commandQueue.Add(new Smooth(info.X, info.Y, info.X2, info.Y2, info.MagicWand, e.Player, expression));
+			_commandQueue.Add(new Smooth(info.X, info.Y, info.X2, info.Y2, e.Player, expression));
 		}
 
-		private void Inactive(CommandArgs e)
+		void Inactive(CommandArgs e)
 		{
 			if (e.Parameters.Count == 0)
 			{
@@ -2943,10 +2875,10 @@ namespace WorldEdit
 					return;
 				}
 			}
-			_commandQueue.Add(new Inactive(info.X, info.Y, info.X2, info.Y2, info.MagicWand, e.Player, mode, expression));
+			_commandQueue.Add(new Inactive(info.X, info.Y, info.X2, info.Y2, e.Player, mode, expression));
 		}
 
-		private void Shift(CommandArgs e)
+		void Shift(CommandArgs e)
 		{
 			if (e.Parameters.Count != 2)
 			{
@@ -2998,7 +2930,7 @@ namespace WorldEdit
 			e.Player.SendSuccessMessage("Shifted selection.");
 		}
 
-        private void Text(CommandArgs e)
+        void Text(CommandArgs e)
         {
             if (e.Parameters.Count == 0)
             {
@@ -3021,7 +2953,7 @@ namespace WorldEdit
             _commandQueue.Add(new Text(info.X, info.Y, info.X2, info.Y2, e.Player, e.Message.Substring(5).TrimStart()));
         }
 
-		private void Undo(CommandArgs e)
+		void Undo(CommandArgs e)
         {
             if (e.Player.Account == null)
             {

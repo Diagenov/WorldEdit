@@ -833,22 +833,23 @@ namespace WorldEdit
 
         public static bool CanSet(bool Tile, ITile tile, int type,
             Selection selection, Expressions.Expression expression,
-            MagicWand magicWand, int x, int y, TSPlayer player) =>
+            int x, int y, TSPlayer player) =>
             Tile
                 ? ((((type >= 0) && (!tile.active() || (tile.type != type)))
                  || ((type == -1) && tile.active())
                  || ((type == -2) && ((tile.liquid == 0) || (tile.liquidType() != 1)))
                  || ((type == -3) && ((tile.liquid == 0) || (tile.liquidType() != 2)))
                  || ((type == -4) && ((tile.liquid == 0) || (tile.liquidType() != 0))))
-                 && selection(x, y, player) && expression.Evaluate(tile)
-                 && magicWand.InSelection(x, y))
+                 && selection(x, y, player) && expression.Evaluate(tile))
                 : (tile.wall != type && selection(x, y, player)
-                 && expression.Evaluate(tile) && magicWand.InSelection(x, y));
+                 && expression.Evaluate(tile));
 
-        public static WEPoint[] CreateLine(int x1, int y1, int x2, int y2)
+        public static Point[] CreateLine(int x1, int y1, int x2, int y2)
         {
-            List<WEPoint> points = new List<WEPoint>()
-            { new WEPoint((short)x1, (short)y1) };
+            var points = new List<Point>()
+            { 
+                new Point((short)x1, (short)y1) 
+            };
 
             int diffX = x2 - x1, diffY = y2 - y1;
             int signX = diffX > 0 ? 1 : diffX < 0 ? -1 : 0;
@@ -889,7 +890,7 @@ namespace WorldEdit
                     y += pdY;
                 }
                 t++;
-                points.Add(new WEPoint((short)x, (short)y));
+                points.Add(new Point((short)x, (short)y));
             }
 
             return points.ToArray();
@@ -912,7 +913,7 @@ namespace WorldEdit
             Math.Pow(x - cX - x1, 2) / Math.Pow(rMax, 2)
             + Math.Pow(y - cY - y1, 2) / Math.Pow(rMin, 2) <= 1;
 
-        public static WEPoint[] CreateEllipseOutline(int x1, int y1, int x2, int y2)
+        public static Point[] CreateEllipseOutline(int x1, int y1, int x2, int y2)
         {
             Vector2 center = new Vector2((float)(x2 - x1) / 2, (float)(y2 - y1) / 2);
             float rMax = Math.Max(center.X, center.Y), rMin = Math.Min(center.X, center.Y);
@@ -923,7 +924,7 @@ namespace WorldEdit
                 rMin = temp;
             }
 
-            List<WEPoint> points = new List<WEPoint>();
+            var points = new List<Point>();
             for (int i = x1; i <= (x2 - ((x2 - x1) / 2)); i++)
             {
                 for (int j = y1; j <= (y2 - ((y2 - y1) / 2)); j++)
@@ -932,7 +933,7 @@ namespace WorldEdit
                     {
                         if (points.Count > 0)
                         {
-                            WEPoint point = points.Last();
+                            var point = points.Last();
                             int e = j;
                             while (point.Y - e >= 1)
                             { addPoint(points, x1, y1, x2, y2, i, e++); }
@@ -955,31 +956,37 @@ namespace WorldEdit
 
             return points.ToArray();
         }
-        private static void addPoint(List<WEPoint> points,
+        private static void addPoint(List<Point> points,
             int x1, int y1, int x2, int y2, int i, int j)
         {
-            points.Add(new WEPoint((short)(x2 - i + x1), (short)j));
-            points.Add(new WEPoint((short)i, (short)(y2 - j + y1)));
-            points.Add(new WEPoint((short)(x2 - i + x1), (short)(y2 - j + y1)));
-            points.Add(new WEPoint((short)i, (short)j));
+            points.Add(new Point((short)(x2 - i + x1), (short)j));
+            points.Add(new Point((short)i, (short)(y2 - j + y1)));
+            points.Add(new Point((short)(x2 - i + x1), (short)(y2 - j + y1)));
+            points.Add(new Point((short)i, (short)j));
         }
 
-        public static WEPoint[,] CreateStatueText(string Text, int Width, int Height)
+        public static Point[,] CreateStatueText(string Text, int Width, int Height)
         {
-            WEPoint[,] text = new WEPoint[Width, Height];
-            if (string.IsNullOrWhiteSpace(Text)) { return text; }
-            List<Tuple<WEPoint[,], int>> rows = new List<Tuple<WEPoint[,], int>>();
+            var text = new Point[Width, Height];
+            if (string.IsNullOrWhiteSpace(Text)) 
+            { 
+                return text; 
+            }
+            var rows = new List<Tuple<Point[,], int>>();
             string[] sRows = Text.ToLower().Replace("\\n", "\n").Split('\n');
             int height = 0;
             for (int i = 0; i < sRows.Length; i++)
             {
-                Tuple<WEPoint[,], int> row = CreateStatueRow(sRows[i], Width, i == 0);
-                if ((height += (row.Item1.GetLength(1) + row.Item2)) > Height) { break; }
+                var row = CreateStatueRow(sRows[i], Width, i == 0);
+                if ((height += (row.Item1.GetLength(1) + row.Item2)) > Height) 
+                { 
+                    break; 
+                }
                 rows.Add(row);
             }
 
             int y = 0;
-            foreach (Tuple<WEPoint[,], int> row in rows)
+            foreach (var row in rows)
             {
                 y += row.Item2;
                 int w = row.Item1.GetLength(0), h = row.Item1.GetLength(1);
@@ -996,10 +1003,10 @@ namespace WorldEdit
             return text;            
         }
 
-        private static Tuple<WEPoint[,], int> CreateStatueRow(string Row, int Width, bool FirstRow)
+        private static Tuple<Point[,], int> CreateStatueRow(string Row, int Width, bool FirstRow)
         {
             Tuple<string, int, int, int> settings = RowSettings(Row, FirstRow);
-            WEPoint[,] text = new WEPoint[Width, settings.Item4];
+            var text = new Point[Width, settings.Item4];
             List<char> letters = settings.Item1.ToCharArray().ToList();
 
             int diff = (int)Math.Ceiling((letters.Count * 2 - Width) / 2d), x = 0;
@@ -1012,7 +1019,7 @@ namespace WorldEdit
 
             for (int k = 0; k < letters.Count; k++)
             {
-                WEPoint[,] letter = CreateStatueLetter(letters[k]);
+                var letter = CreateStatueLetter(letters[k]);
                 for (int i = 0; i < 2; i++)
                 {
                     if (i + x > Width) { break; }
@@ -1021,7 +1028,7 @@ namespace WorldEdit
                     x++;
                 }
             }
-            return new Tuple<WEPoint[,], int>(text, settings.Item3);
+            return new Tuple<Point[,], int>(text, settings.Item3);
         }
 
         private static Tuple<string, int, int, int> RowSettings(string Row, bool FirstRow)
@@ -1077,21 +1084,30 @@ namespace WorldEdit
             return new Tuple<string, int, int, int>(Row, style, spacing, height);
         }
 
-        private static WEPoint[,] CreateStatueLetter(char Letter)
+        private static Point[,] CreateStatueLetter(char Letter)
         {
-            WEPoint[,] letter = new WEPoint[2, 3];
+            var letter = new Point[2, 3];
             short leftTop, a = 0;
+
             if ((Letter > 47) && (Letter < 58))
-            { leftTop = (short)((Letter - 48) * 36); }
+            { 
+                leftTop = (short)((Letter - 48) * 36); 
+            }
             else if ((Letter > 96) && (Letter < 123))
-            { leftTop = (short)((Letter - 87) * 36); }
-            else { return letter; }
-            
+            { 
+                leftTop = (short)((Letter - 87) * 36); 
+            }
+            else
+            {
+                return letter; 
+            }
             for (short i = leftTop; i <= (leftTop + 18); i += 18)
             {
                 int b = 0;
                 for (short j = 0; j <= 36; j += 18)
-                { letter[a, b++] = new WEPoint(i, j); }
+                { 
+                    letter[a, b++] = new Point(i, j); 
+                }
                 a++;
             }
             return letter;

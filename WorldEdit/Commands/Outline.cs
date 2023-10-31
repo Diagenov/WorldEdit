@@ -15,8 +15,8 @@ namespace WorldEdit.Commands
 		private bool coating;
 
 
-        public Outline(int x, int y, int x2, int y2, MagicWand magicWand, TSPlayer plr, int tileType, int color, bool active, bool coating, Expression expression)
-			: base(x, y, x2, y2, magicWand, plr)
+        public Outline(int x, int y, int x2, int y2, TSPlayer plr, int tileType, int color, bool active, bool coating, Expression expression)
+			: base(x, y, x2, y2, plr)
 		{
 			this.tileType = tileType;
 			this.color = color;
@@ -57,7 +57,7 @@ namespace WorldEdit.Commands
 					bool XmY = Main.tile[i, j - 1].active();
 					bool XpY = Main.tile[i, j + 1].active();
 
-					if (XY && expression.Evaluate(Main.tile[i, j]) && magicWand.InSelection(i, j))
+					if (XY && expression.Evaluate(Main.tile[i, j]))
 					{
 						if (!mXmY)
 						{

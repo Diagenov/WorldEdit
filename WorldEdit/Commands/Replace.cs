@@ -33,7 +33,7 @@ namespace WorldEdit.Commands
                      || ((from == -2) && (tile.liquid != 0) && (tile.liquidType() == 1))
                      || ((from == -3) && (tile.liquid != 0) && (tile.liquidType() == 2))
                      || ((from == -4) && (tile.liquid == 0) && (tile.liquidType() == 0)))
-                     && Tools.CanSet(true, tile, to, select, expression, magicWand, i, j, plr))
+                     && Tools.CanSet(true, tile, to, select, expression, i, j, plr))
                     {
                         SetTile(i, j, to);
                         edits++;

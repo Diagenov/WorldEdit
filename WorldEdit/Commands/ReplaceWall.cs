@@ -31,7 +31,7 @@ namespace WorldEdit.Commands
                 for (int j = y; j <= y2; j++)
                 {
                     ITile tile = Main.tile[i, j];
-                    if (tile.wall == from && Tools.CanSet(false, tile, to, select, expression, magicWand, i, j, plr))
+                    if (tile.wall == from && Tools.CanSet(false, tile, to, select, expression, i, j, plr))
                     {
                         tile.wall = (ushort)to;
                         edits++;
