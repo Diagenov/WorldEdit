@@ -158,6 +158,7 @@ namespace WorldEdit
                         int startY = reader.ReadInt16();
                         int endX = reader.ReadInt16();
                         int endY = reader.ReadInt16();
+						var mode = reader.ReadByte();
 
                         if (startX < 0 || startY < 0 || endX < 0 || endY < 0 || startX >= Main.maxTilesX || startY >= Main.maxTilesY || endX >= Main.maxTilesX || endY >= Main.maxTilesY)
 						{
@@ -166,6 +167,10 @@ namespace WorldEdit
 
 						if (data.Wand)
 						{
+							if ((mode & 32) == 32)
+							{
+								return;
+							}
                             data.X = startX;
                             data.Y = startY;
                             data.X2 = endX;
