@@ -5,6 +5,7 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using Microsoft.Xna.Framework;
@@ -2031,7 +2032,8 @@ namespace WorldEdit
 							{
 								HeaderFormat = "Schematics ({0}/{1})" + (useDirectory ? " for directory {0}:".SFormat(e.Parameters[1]) : ":"),
 								FooterFormat = "Type //schematic list " + (useDirectory ? "{0} ".SFormat(e.Parameters[1]) : "") + "{0} for more.",
-								NothingToDisplayString = "There are no schematics."
+								NothingToDisplayString = "There are no schematics.",
+                                LineTextColor = new Color(255, 255, 150)
                             });
 					}
 					return;
@@ -2188,7 +2190,7 @@ namespace WorldEdit
                         }
                         var useDirectory = e.Parameters.Count == skip + 3;
                         var directory = useDirectory ? Path.Combine("worldedit", e.Parameters[skip + 1]) : "worldedit";
-                        string name = e.Parameters.ElementAtOrDefault(skip + 1);
+                        var name = e.Parameters.ElementAtOrDefault(skip + 1);
                         if (string.IsNullOrWhiteSpace(name))
                         {
                             e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //schematic save [-force/-f] [directory] <name>");
@@ -2310,12 +2312,47 @@ namespace WorldEdit
                         }
                     }
                     return;
+				case "find":
+				case "f":
+                    if (e.Parameters.Count > 3 || e.Parameters.Count < 2)
+                    {
+                        e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //schematic find/f <name> [page]");
+                        return;
+                    }
+					var findPattern = e.Parameters[1];
+					var page = 1;
+                    if (!PaginationTools.TryParsePageNumber(e.Parameters, 2, e.Player, out page))
+                        return;
+					var currentDirs = new[] { "worldedit" };
+					var resDirs = new List<string>();
+                    while (currentDirs.Length > 0)
+                    {
+						resDirs.AddRange(currentDirs);
+						currentDirs = currentDirs.SelectMany(d => Directory.GetDirectories(d)).ToArray();
+					}
+                    var schems = resDirs.SelectMany(d => Directory.GetFiles(d, fileFormat.SFormat($"*{findPattern}*"))
+																  .Select(n =>
+																  {
+																	  var dir = (d.Replace("worldedit", "").Replace('\\', '/') + "/").Remove(0, 1);
+																	  dir = dir.Length == 0 ? "" : $"[c/00ff00:{dir}]";
+																	  return dir + n.Substring(11 + d.Length, n.Length - (11 + d.Length) - 4);
+																  }));
+                    PaginationTools.SendPage(e.Player, page, PaginationTools.BuildLinesFromTerms(schems),
+                            new PaginationTools.Settings
+                            {
+                                HeaderFormat = "Schematics ({0}/{1}):",
+                                FooterFormat = "Type //schematic find {0} {{0}} for more.".SFormat(findPattern),
+                                NothingToDisplayString = "There are no schematics.",
+								LineTextColor = new Color(255, 255, 150)
+                            });
+                    break;
 				default:
                     e.Player.SendSuccessMessage("Schematics Subcommands:");
                     e.Player.SendInfoMessage("/sc delete/del <name>\n"
-                                           + "/sc list [page]\n"
+                                           + "/sc list [directory] [page]\n"
                                            + "/sc load/l [directory] <name>\n"
                                            + "/sc save/s [directory] <name>\n"
+                                           + "/sc find/f <name> [page]\n"
                                            + (Config.StartSchematicNamesWithCreatorUserID
                                            ? "/sc save/s id\n"
                                            : "")
