@@ -1987,23 +1987,30 @@ namespace WorldEdit
                             e.Player.SendErrorMessage("You do not have permission to delete schematics.");
                             return;
                         }
-                        if (e.Parameters.Count != 3
+                        if (e.Parameters.Count < 3 || e.Parameters.Count > 4
                             || e.Parameters[1].ToLower() != "-confirm")
 						{
-							e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //schematic delete -confirm <name>");
+							e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //schematic delete -confirm [directory] <name>");
 							return;
 						}
 
-						string path = Path.Combine("worldedit", string.Format(fileFormat, e.Parameters[2]));
+                        var useDirectory = e.Parameters.Count == 4;
+                        var directory = useDirectory ? Path.Combine("worldedit", e.Parameters[2]) : "worldedit";
+                        var name = e.Parameters[useDirectory ? 3 : 2];
+                        var path = Path.Combine(directory, string.Format(fileFormat, name));
 
-						if (!File.Exists(path))
+                        if (!File.Exists(path))
 						{
-							e.Player.SendErrorMessage("Invalid schematic '{0}'!", e.Parameters[2]);
+							e.Player.SendErrorMessage("Invalid schematic '{0}'!", name);
 							return;
 						}
-
 						File.Delete(path);
-						e.Player.SendErrorMessage("Deleted schematic '{0}'.", e.Parameters[2]);
+						while (directory != "worldedit" && !Directory.EnumerateFiles(directory).Any())
+						{
+                            Directory.Delete(directory);
+							directory = Directory.GetParent(directory).ToString();
+                        }
+						e.Player.SendErrorMessage("Deleted schematic '{0}'.", name);
 					}
 					return;
 				case "list":
@@ -2063,11 +2070,11 @@ namespace WorldEdit
 						}
 						else
 						{
-							e.Player.SendErrorMessage("Invalid schematic '{0}'!", name);
+							e.Player.SendErrorMessage("Invalid schematic '{0}'" + (useDirectory ? " in directory '{0}'!".SFormat(e.Parameters[1]) : "!"), name);
 							return;
 						}
 
-						e.Player.SendSuccessMessage("Loaded schematic '{0}'" + (useDirectory ? " from directory '{0}'".SFormat(e.Parameters[1]) : "")  + " to clipboard.", name);
+						e.Player.SendSuccessMessage("Loaded schematic '{0}'" + (useDirectory ? " in directory '{0}'".SFormat(e.Parameters[1]) : "")  + " to clipboard.", name);
 					}
 					return;
 				case "s":
@@ -2348,7 +2355,7 @@ namespace WorldEdit
                     break;
 				default:
                     e.Player.SendSuccessMessage("Schematics Subcommands:");
-                    e.Player.SendInfoMessage("/sc delete/del <name>\n"
+                    e.Player.SendInfoMessage("/sc delete/del [directory] <name>\n"
                                            + "/sc list [directory] [page]\n"
                                            + "/sc load/l [directory] <name>\n"
                                            + "/sc save/s [directory] <name>\n"
