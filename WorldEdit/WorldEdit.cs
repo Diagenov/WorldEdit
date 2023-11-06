@@ -5,6 +5,7 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using Microsoft.Xna.Framework;
@@ -1986,46 +1987,61 @@ namespace WorldEdit
                             e.Player.SendErrorMessage("You do not have permission to delete schematics.");
                             return;
                         }
-                        if (e.Parameters.Count != 3
+                        if (e.Parameters.Count < 3 || e.Parameters.Count > 4
                             || e.Parameters[1].ToLower() != "-confirm")
 						{
-							e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //schematic delete -confirm <name>");
+							e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //schematic delete -confirm [directory] <name>");
 							return;
 						}
 
-						string path = Path.Combine("worldedit", string.Format(fileFormat, e.Parameters[2]));
+                        var useDirectory = e.Parameters.Count == 4;
+                        var directory = useDirectory ? Path.Combine("worldedit", e.Parameters[2]) : "worldedit";
+                        var name = e.Parameters[useDirectory ? 3 : 2];
+                        var path = Path.Combine(directory, string.Format(fileFormat, name));
 
-						if (!File.Exists(path))
+                        if (!File.Exists(path))
 						{
-							e.Player.SendErrorMessage("Invalid schematic '{0}'!", e.Parameters[2]);
+							e.Player.SendErrorMessage("Invalid schematic '{0}'" + (useDirectory ? " in directory '{0}'.".SFormat(e.Parameters[2]) : "!"), name);
 							return;
 						}
-
 						File.Delete(path);
-						e.Player.SendErrorMessage("Deleted schematic '{0}'.", e.Parameters[2]);
+						while (directory != "worldedit" && !Directory.EnumerateFiles(directory).Any())
+						{
+                            Directory.Delete(directory);
+							directory = Directory.GetParent(directory).ToString();
+                        }
+						e.Player.SendErrorMessage("Deleted schematic '{0}'" + (useDirectory ? " in directory '{0}'.".SFormat(e.Parameters[2]) : "."), name);
 					}
 					return;
 				case "list":
 					{
-						if (e.Parameters.Count > 2)
+						if (e.Parameters.Count > 3)
 						{
-							e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //schematic list [page]");
+							e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //schematic list [directory] [page]");
 							return;
 						}
-
-						int pageNumber;
-						if (!PaginationTools.TryParsePageNumber(e.Parameters, 1, e.Player, out pageNumber))
+						var useDirectory = e.Parameters.Count == 3;
+                        var directory = useDirectory ? Path.Combine("worldedit", e.Parameters[1]) : "worldedit";
+						if (!Directory.Exists(directory))
+						{
+                            e.Player.SendErrorMessage("Invalid directory \"{0}\"", e.Parameters[1]);
+                            return;
+                        }
+                        int pageNumber;
+						if (!PaginationTools.TryParsePageNumber(e.Parameters, useDirectory ? 2 : 1, e.Player, out pageNumber))
 							return;
-
-						var schematics = from s in Directory.EnumerateFiles("worldedit", string.Format(fileFormat, "*"))
-											select s.Substring(20, s.Length - 24);
-
-						PaginationTools.SendPage(e.Player, pageNumber, PaginationTools.BuildLinesFromTerms(schematics),
+                        int startIndex = 11 + directory.Length;
+                        var schematics = from s in Directory.EnumerateFiles(directory, string.Format(fileFormat, "*"))
+											select s.Substring(startIndex, s.Length - startIndex - 4);
+						var info = Directory.GetDirectories(directory).Select(d => "[c/00ff00:{0}]".SFormat(Path.GetFileName(d))).Union(schematics);
+                        PaginationTools.SendPage(e.Player, pageNumber, PaginationTools.BuildLinesFromTerms(info),
 							new PaginationTools.Settings
 							{
-								HeaderFormat = "Schematics ({0}/{1}):",
-								FooterFormat = "Type //schematic list {0} for more."
-							});
+								HeaderFormat = "Schematics ({0}/{1})" + (useDirectory ? " for directory {0}:".SFormat(e.Parameters[1]) : ":"),
+								FooterFormat = "Type //schematic list " + (useDirectory ? "{0} ".SFormat(e.Parameters[1]) : "") + "{0} for more.",
+								NothingToDisplayString = "There are no schematics.",
+                                LineTextColor = new Color(255, 255, 150)
+                            });
 					}
 					return;
 				case "l":
@@ -2036,13 +2052,15 @@ namespace WorldEdit
                             e.Player.SendErrorMessage("You have to be logged in to use this command.");
                             return;
                         }
-                        else if (e.Parameters.Count != 2)
+                        else if (e.Parameters.Count < 2 || e.Parameters.Count > 3)
 						{
-							e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //schematic load <name>");
+							e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //schematic load [directory] <name>");
 							return;
 						}
-
-						var path = Path.Combine("worldedit", string.Format(fileFormat, e.Parameters[1]));
+                        var useDirectory = e.Parameters.Count == 3;
+                        var directory = useDirectory ? Path.Combine("worldedit", e.Parameters[1]) : "worldedit";
+						var name = e.Parameters[useDirectory ? 2 : 1];
+                        var path = Path.Combine(directory, string.Format(fileFormat, name));
 
 						var clipboard = Tools.GetClipboardPath(e.Player.Account.ID);
 
@@ -2052,11 +2070,11 @@ namespace WorldEdit
 						}
 						else
 						{
-							e.Player.SendErrorMessage("Invalid schematic '{0}'!", e.Parameters[1]);
+							e.Player.SendErrorMessage("Invalid schematic '{0}'" + (useDirectory ? " in directory '{0}'!".SFormat(e.Parameters[1]) : "!"), name);
 							return;
 						}
 
-						e.Player.SendSuccessMessage("Loaded schematic '{0}' to clipboard.", e.Parameters[1]);
+						e.Player.SendSuccessMessage("Loaded schematic '{0}'" + (useDirectory ? " in directory '{0}'".SFormat(e.Parameters[1]) : "")  + " to clipboard.", name);
 					}
 					return;
 				case "s":
@@ -2089,12 +2107,21 @@ namespace WorldEdit
                             return;
                         }
 
-                        string _1 = e.Parameters.ElementAtOrDefault(1)?.ToLower();
-                        bool force = ((_1 == "-force") || (_1 == "-f"));
-                        string name = e.Parameters.ElementAtOrDefault(force ? 2 : 1);
+						var force = false;
+						var skip = 0;
+                        if (e.Parameters.Contains("-f"))
+						{
+							force = true;
+							skip++;
+                        }
+                        var useDirectory = e.Parameters.Count == skip + 3;
+                        var directory = useDirectory ? Path.Combine("worldedit", e.Parameters[skip + 1]) : "worldedit";
+						if (useDirectory)
+							skip++;
+                        string name = e.Parameters.ElementAtOrDefault(skip + 1);
                         if (string.IsNullOrWhiteSpace(name))
 						{
-							e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //schematic save [-force/-f] <name>");
+							e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //schematic save [-force/-f] [directory] <name>");
 							return;
 						}
 
@@ -2116,7 +2143,7 @@ namespace WorldEdit
                         if (Config.StartSchematicNamesWithCreatorUserID)
                             name = $"{e.Player.Account.ID}-{name}";
 
-						var path = Path.Combine("worldedit", string.Format(fileFormat, name));
+						var path = Path.Combine(directory, string.Format(fileFormat, name));
 
                         if (File.Exists(path))
                         {
@@ -2128,14 +2155,16 @@ namespace WorldEdit
                             else if (!force)
                             {
                                 e.Player.SendErrorMessage($"Schematic '{name}' already exists, " +
-                                    $"write '//schematic save <-force/-f> {name}' to overwrite it.");
+                                    $"write '//schematic save <-force/-f> [directory] {name}' to overwrite it.");
                                 return;
                             }
                         }
 
-						File.Copy(clipboard, path, true);
+                        if (!Directory.Exists(directory))
+                            Directory.CreateDirectory(directory);
+                        File.Copy(clipboard, path, true);
 
-						e.Player.SendSuccessMessage("Saved clipboard to schematic '{0}'.", name);
+						e.Player.SendSuccessMessage("Saved clipboard to schematic '{0}'" + (useDirectory ? " in directory '{0}'.".SFormat(e.Parameters[force ? 2 : 1]) : "."), name);
 					}
 					return;
                 case "cs":
@@ -2159,12 +2188,27 @@ namespace WorldEdit
                             return;
                         }
 
-                        string _1 = e.Parameters.ElementAtOrDefault(1)?.ToLower();
-                        bool force = ((_1 == "-force") || (_1 == "-f"));
-                        string name = e.Parameters.ElementAtOrDefault(force ? 2 : 1);
+                        var force = false;
+                        var skip = 0;
+                        if (e.Parameters.Contains("-f"))
+                        {
+                            force = true;
+                            skip++;
+                        }
+                        var useDirectory = e.Parameters.Count == skip + 3;
+                        var directory = useDirectory ? Path.Combine("worldedit", e.Parameters[skip + 1]) : "worldedit";
+                        var name = e.Parameters.ElementAtOrDefault(skip + 1);
                         if (string.IsNullOrWhiteSpace(name))
                         {
-                            e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //schematic copysave [-force/-f] <name>");
+                            e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //schematic save [-force/-f] [directory] <name>");
+                            return;
+                        }
+
+                        string clipboard = Tools.GetClipboardPath(e.Player.Account.ID);
+
+                        if (!File.Exists(clipboard))
+                        {
+                            e.Player.SendErrorMessage("Invalid clipboard!");
                             return;
                         }
 
@@ -2177,8 +2221,9 @@ namespace WorldEdit
 
                         if (Config.StartSchematicNamesWithCreatorUserID)
                             name = $"{e.Player.Account.ID}-{name}";
-
-                        var path = Path.Combine("worldedit", string.Format(fileFormat, name));
+                        if (!Directory.Exists(directory))
+                            Directory.CreateDirectory(directory);
+                        var path = Path.Combine(directory, string.Format(fileFormat, name));
 
                         if (File.Exists(path))
                         {
@@ -2190,7 +2235,7 @@ namespace WorldEdit
                             else if (!force)
                             {
                                 e.Player.SendErrorMessage($"Schematic '{name}' already exists, " +
-                                    $"write '//schematic copysave <-force/-f> {name}' to overwrite it.");
+                                    $"write '//schematic save <-force/-f> [directory] {name}' to overwrite it.");
                                 return;
                             }
                         }
@@ -2274,16 +2319,51 @@ namespace WorldEdit
                         }
                     }
                     return;
+				case "find":
+				case "f":
+                    if (e.Parameters.Count > 3 || e.Parameters.Count < 2)
+                    {
+                        e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //schematic find/f <name> [page]");
+                        return;
+                    }
+					var findPattern = e.Parameters[1];
+					var page = 1;
+                    if (!PaginationTools.TryParsePageNumber(e.Parameters, 2, e.Player, out page))
+                        return;
+					var currentDirs = new[] { "worldedit" };
+					var resDirs = new List<string>();
+                    while (currentDirs.Length > 0)
+                    {
+						resDirs.AddRange(currentDirs);
+						currentDirs = currentDirs.SelectMany(d => Directory.GetDirectories(d)).ToArray();
+					}
+                    var schems = resDirs.SelectMany(d => Directory.GetFiles(d, fileFormat.SFormat($"*{findPattern}*"))
+																  .Select(n =>
+																  {
+																	  var dir = (d.Replace("worldedit", "").Replace('\\', '/') + "/").Remove(0, 1);
+																	  dir = dir.Length == 0 ? "" : $"[c/00ff00:{dir}]";
+																	  return dir + n.Substring(11 + d.Length, n.Length - (11 + d.Length) - 4);
+																  }));
+                    PaginationTools.SendPage(e.Player, page, PaginationTools.BuildLinesFromTerms(schems),
+                            new PaginationTools.Settings
+                            {
+                                HeaderFormat = "Schematics ({0}/{1}):",
+                                FooterFormat = "Type //schematic find {0} {{0}} for more.".SFormat(findPattern),
+                                NothingToDisplayString = "There are no schematics.",
+								LineTextColor = new Color(255, 255, 150)
+                            });
+                    break;
 				default:
                     e.Player.SendSuccessMessage("Schematics Subcommands:");
-                    e.Player.SendInfoMessage("/sc delete/del <name>\n"
-                                           + "/sc list [page]\n"
-                                           + "/sc load/l <name>\n"
-                                           + "/sc save/s <name>\n"
+                    e.Player.SendInfoMessage("/sc delete/del [directory] <name>\n"
+                                           + "/sc list [directory] [page]\n"
+                                           + "/sc load/l [directory] <name>\n"
+                                           + "/sc save/s [directory] <name>\n"
+                                           + "/sc find/f <name> [page]\n"
                                            + (Config.StartSchematicNamesWithCreatorUserID
                                            ? "/sc save/s id\n"
                                            : "")
-                                           + "/sc copysave/cs <name>\n"
+                                           + "/sc copysave/cs [directory] <name>\n"
                                            + "/sc paste/p <name> [alignment] [-f] [=> boolean expr...]\n"
 										   + "/sc translate1.4/to1.4 <name>");
                     return;
