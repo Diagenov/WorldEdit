@@ -2001,7 +2001,7 @@ namespace WorldEdit
 
                         if (!File.Exists(path))
 						{
-							e.Player.SendErrorMessage("Invalid schematic '{0}'!", name);
+							e.Player.SendErrorMessage("Invalid schematic '{0}'" + (useDirectory ? " in directory '{0}'.".SFormat(e.Parameters[2]) : "!"), name);
 							return;
 						}
 						File.Delete(path);
@@ -2010,7 +2010,7 @@ namespace WorldEdit
                             Directory.Delete(directory);
 							directory = Directory.GetParent(directory).ToString();
                         }
-						e.Player.SendErrorMessage("Deleted schematic '{0}'.", name);
+						e.Player.SendErrorMessage("Deleted schematic '{0}'" + (useDirectory ? " in directory '{0}'.".SFormat(e.Parameters[2]) : "."), name);
 					}
 					return;
 				case "list":
