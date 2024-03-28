@@ -36,6 +36,10 @@
     <Reference Include="TShockAPI">
       <HintPath>..\References\TShockAPI.dll</HintPath>
     </Reference>
+	
+	<Reference Include="Regions">
+      <HintPath>..\References\Regions.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

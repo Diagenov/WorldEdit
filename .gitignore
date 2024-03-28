@@ -1,4 +1,3 @@
-*/bin/*
 */obj/*
 
 *.suo
@@ -11,3 +10,9 @@
 .vs/
 
 packages/
+
+*/References/*
+Regions.dll
+
+WorldEdit/bin/Debug/net6.0/*
+!WorldEdit/bin/Debug/net6.0/WorldEdit.dll
