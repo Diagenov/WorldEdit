@@ -11,6 +11,7 @@ using Terraria.DataStructures;
 using Microsoft.Xna.Framework;
 using Terraria.ID;
 using System.Threading;
+using Regions;
 
 namespace WorldEdit
 {
@@ -1111,6 +1112,55 @@ namespace WorldEdit
                 a++;
             }
             return letter;
+        }
+    
+        public static bool CheckPoint(TSPlayer player, PlayerInfo info, int x, int y, int pointNumber)
+        {
+            if (player.HasPermission("worldedit.selection.point"))
+                return true;
+
+            var r = RegionInfo.FindByPoint(x, y);
+            if (r == null || !r.Has(RegionTypes.WorldEdit) || !r.Region.HasPermissionToBuildInRegion(player))
+            {
+                player.SendErrorMessage("You have touched a foreign region!");
+                return false;
+            }
+            if (pointNumber == 1 ? !r.Region.InArea(info.X2, info.Y2) : !r.Region.InArea(info.X, info.Y))
+            {
+                if (pointNumber == 1)
+                {
+                    info.X2 = -1;
+                    info.Y2 = -1;
+                }
+                else
+                {
+                    info.X = -1;
+                    info.Y = -1;
+                }
+                player.SendInfoMessage($"Don't forget to set point {(pointNumber == 1 ? 2 : 1)} (if necessary).");
+            }
+            return true;
+        }
+
+        public static bool CheckPoints(TSPlayer player, int x1, int y1, int x2, int y2)
+        {
+            if (player.HasPermission("worldedit.selection.point"))
+                return true;
+
+            var r1 = RegionInfo.FindByPoint(x1, y1);
+            if (r1 == null || !r1.Has(RegionTypes.WorldEdit) || !r1.Region.HasPermissionToBuildInRegion(player))
+            {
+                player.SendErrorMessage("You have touched a foreign region!");
+                return false;
+            }
+
+            var r2 = RegionInfo.FindByPoint(x2, y2);
+            if (r2 != r1)
+            {
+                player.SendErrorMessage("You have touched a foreign region!");
+                return false;
+            }
+            return true;
         }
     }
 }
