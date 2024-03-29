@@ -1172,7 +1172,7 @@ namespace WorldEdit
             }
             if (list.Count == 0)
             {
-                player.SendErrorMessage($"You have touched a foreign region!");
+                player.Threat();
                 return false;
             }
             list = list.OrderByDescending(t => t.Item1.Z).ToList();
@@ -1183,7 +1183,7 @@ namespace WorldEdit
             }
             else if (list.Count == 1)
             {
-                player.SendErrorMessage($"You have touched a foreign region! Region: [c/ffffff:{list.First().Item1.Name}]");
+                player.Threat(list.First().Item1);
                 return false;
             }
 
@@ -1196,7 +1196,7 @@ namespace WorldEdit
                     var q = list.Find(t => t.Item1.InArea(i, j));
                     if (q == null)
                     {
-                        player.SendErrorMessage($"You have touched a foreign region! Region: [c/ffffff:{q.Item1.Name}]");
+                        player.Threat(q.Item1);
                         return false;
                     }
                     if (@checked || checks.Contains(q.Item1))
@@ -1218,7 +1218,7 @@ namespace WorldEdit
         {
             if (!region.HasPermissionToBuildInRegion(player))
             {
-                player.SendErrorMessage($"You have touched a foreign region! Region: [c/ffffff:{region.Name}]");
+                player.Threat(region);
                 return false;
             }
             if (permission)
@@ -1227,12 +1227,29 @@ namespace WorldEdit
             }
             if (info == null || !info.Has(RegionTypes.WorldEdit))
             {
-                player.SendErrorMessage($"You have touched a foreign region! Region: [c/ffffff:{region.Name}]");
+                player.Threat(region);
                 return false;
             }
             return true;
         }
     
+        private static void Threat(this TSPlayer player, Region region = null)
+        {
+            if (player.IsBouncerThrottled())
+            {
+                return;
+            }
+            if (region == null)
+            {
+                player.SendErrorMessage($"You have touched a foreign region!");
+            }
+            else
+            {
+                player.SendErrorMessage($"You have touched a foreign region! Region: [c/ffffff:{region.Name}]");
+            }
+            player.LastThreat = DateTime.UtcNow;
+        }
+
         public static bool CheckRealPlayer(this CommandArgs e)
         {
             if (!e.Player.RealPlayer)

@@ -308,7 +308,7 @@ namespace WorldEdit
 			{
 				HelpText = "Sets the worldedit selection to the entire world."
 			});
-			TShockAPI.Commands.ChatCommands.Add(new Command("worldedit.region.biome", Biome, "/biome")
+			TShockAPI.Commands.ChatCommands.Add(new Command(Biome, "/biome")
 			{
 				HelpText = "Converts biomes in the worldedit selection."
 			});
@@ -320,7 +320,7 @@ namespace WorldEdit
 			{
 				HelpText = "Copies the worldedit selection to the clipboard, then deletes it."
 			});
-			TShockAPI.Commands.ChatCommands.Add(new Command("worldedit.utils.drain", Drain, "/drain")
+			TShockAPI.Commands.ChatCommands.Add(new Command(Drain, "/drain")
 			{
 				HelpText = "Drains liquids in the worldedit selection."
 			});
@@ -348,11 +348,11 @@ namespace WorldEdit
 			{
 				HelpText = "Fixes covered slopes in the worldedit selection."
 			});
-			TShockAPI.Commands.ChatCommands.Add(new Command("worldedit.clipboard.flip", Flip, "/flip")
+			TShockAPI.Commands.ChatCommands.Add(new Command(Flip, "/flip")
 			{
 				HelpText = "Flips the worldedit clipboard."
 			});
-			TShockAPI.Commands.ChatCommands.Add(new Command("worldedit.utils.flood", Flood, "/flood")
+			TShockAPI.Commands.ChatCommands.Add(new Command(Flood, "/flood")
 			{
 				HelpText = "Floods liquids in the worldedit selection."
 			});
@@ -385,11 +385,11 @@ namespace WorldEdit
 			{
 				HelpText = "Sets wall outline around walls in area."
 			});
-			TShockAPI.Commands.ChatCommands.Add(new Command("worldedit.region.paint", Paint, "/paint", "/pa")
+			TShockAPI.Commands.ChatCommands.Add(new Command(Paint, "/paint", "/pa")
 			{
 				HelpText = "Paints tiles in the worldedit selection."
 			});
-			TShockAPI.Commands.ChatCommands.Add(new Command("worldedit.region.paintwall", PaintWall, "/paintwall", "/paw")
+			TShockAPI.Commands.ChatCommands.Add(new Command(PaintWall, "/paintwall", "/paw")
 			{
 				HelpText = "Paints walls in the worldedit selection."
 			});
@@ -429,7 +429,7 @@ namespace WorldEdit
 			{
 				HelpText = "Resizes the worldedit selection in a direction."
 			});
-			TShockAPI.Commands.ChatCommands.Add(new Command("worldedit.clipboard.rotate", Rotate, "/rotate")
+			TShockAPI.Commands.ChatCommands.Add(new Command(Rotate, "/rotate")
 			{
 				HelpText = "Rotates the worldedit clipboard."
 			});
@@ -437,7 +437,7 @@ namespace WorldEdit
 			{
 				HelpText = "Manages worldedit schematics."
 			});
-			TShockAPI.Commands.ChatCommands.Add(new Command("worldedit.selection.selecttype", Select, "/select")
+			TShockAPI.Commands.ChatCommands.Add(new Command(Select, "/select")
 			{
 				HelpText = "Sets the worldedit selection function."
 			});
@@ -477,19 +477,19 @@ namespace WorldEdit
 			{
 				HelpText = "Shows size of clipboard or schematic."
 			});
-			TShockAPI.Commands.ChatCommands.Add(new Command("worldedit.region.slope", Slope, "/slope")
+			TShockAPI.Commands.ChatCommands.Add(new Command(Slope, "/slope")
 			{
 				HelpText = "Slopes tiles in the worldedit selection."
 			});
-			TShockAPI.Commands.ChatCommands.Add(new Command("worldedit.region.delslope", SlopeDelete, "/delslope", "/delslopes", "/dslope", "/dslopes")
+			TShockAPI.Commands.ChatCommands.Add(new Command(SlopeDelete, "/delslope", "/delslopes", "/dslope", "/dslopes")
 			{
 				HelpText = "Removes slopes in the worldedit selection."
 			});
-			TShockAPI.Commands.ChatCommands.Add(new Command("worldedit.region.smooth", Smooth, "/smooth")
+			TShockAPI.Commands.ChatCommands.Add(new Command(Smooth, "/smooth")
 			{
 				HelpText = "Smooths blocks in the worldedit selection."
 			});
-			TShockAPI.Commands.ChatCommands.Add(new Command("worldedit.selection.inactive", Inactive, "/inactive", "/ia")
+			TShockAPI.Commands.ChatCommands.Add(new Command(Inactive, "/inactive", "/ia")
 			{
 				HelpText = "Sets the inactive status in the worldedit selection."
 			});
@@ -497,7 +497,7 @@ namespace WorldEdit
 			{
 				HelpText = "Shifts the worldedit selection in a direction."
 			});
-			TShockAPI.Commands.ChatCommands.Add(new Command("worldedit.selection.text", Text, "/text")
+			TShockAPI.Commands.ChatCommands.Add(new Command(Text, "/text")
 			{
 				HelpText = "Creates text with alphabet statues in the worldedit selection."
 			});
