@@ -12,7 +12,10 @@ namespace WorldEdit.Commands
 
 		public override void Execute()
         {
-            if (!CanUseCommand()) { return; }
+            if (!CanUseCommand("worldedit.utils.drain")) 
+			{ 
+				return; 
+			}
             Tools.PrepareUndo(x, y, x2, y2, plr);
 			int edits = 0;
 			for (int i = x; i <= x2; i++)

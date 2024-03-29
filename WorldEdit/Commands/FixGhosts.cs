@@ -15,7 +15,7 @@ namespace WorldEdit.Commands
 
 		public override void Execute()
         {
-            if (!CanUseCommand()) { return; }
+            if (!CanUseCommand("worldedit.utils.fixghosts")) { return; }
             Tools.PrepareUndo(x, y, x2, y2, plr);
             int signs = 0, frames = 0, chests = 0, sensors = 0, dummies = 0;
             int weaponRacks = 0, pylons = 0, mannequins = 0, hatRacks = 0, foodPlates = 0;

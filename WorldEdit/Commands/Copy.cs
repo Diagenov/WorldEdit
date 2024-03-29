@@ -13,10 +13,10 @@ namespace WorldEdit.Commands
 
 		public override void Execute()
 		{
-			if (!CanUseCommand()) { return; }
+            if (!CanUseCommand("worldedit.clipboard.copy"))
+				return;
 
 			string clipboardPath = Tools.GetClipboardPath(plr.Account.ID);
-			
 			Tools.SaveWorldSection(x, y, x2, y2, save ?? clipboardPath);
 
             plr.SendSuccessMessage("Copied selection to {0}.", save == null ? "clipboard" : "schematic");

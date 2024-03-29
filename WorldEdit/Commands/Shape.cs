@@ -33,7 +33,7 @@ namespace WorldEdit.Commands
 
         public override void Execute()
         {
-            if (!CanUseCommand()) { return; }
+            if (!CanUseCommand("worldedit.region.shape")) { return; }
             if (shapeType != 0)
             {
                 Position(true);

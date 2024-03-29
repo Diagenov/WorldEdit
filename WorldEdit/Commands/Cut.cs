@@ -14,7 +14,8 @@ namespace WorldEdit.Commands
 
 		public override void Execute()
 		{
-			if (!CanUseCommand()) { return; }
+			if (!CanUseCommand("worldedit.clipboard.cut")) 
+				return; 
 
 			foreach (string fileName in Directory.EnumerateFiles("worldedit", string.Format("redo-{0}-*.dat", plr.Account.ID)))
 				File.Delete(fileName);
@@ -43,10 +44,13 @@ namespace WorldEdit.Commands
 			for (int i = x; i <= x2; i++)
 			{
 				for (int j = y; j <= y2; j++)
-				{ Main.tile[i, j] = new Tile(); }
+				{ 
+					Main.tile[i, j] = new Tile(); 
+				}
 			}
 
-			if (File.Exists(clipboard)) File.Delete(clipboard);
+			if (File.Exists(clipboard)) 
+				File.Delete(clipboard);
 			File.Copy(undoPath, clipboard);
 
 			ResetSection();

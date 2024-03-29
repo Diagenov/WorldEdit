@@ -54,7 +54,7 @@ namespace WorldEdit.Commands
                 y -= height;
             }
 
-            if (!CanUseCommand()) { return; }
+            if (!CanUseCommand("worldedit.clipboard.spaste")) { return; }
 
             if (x < 0) { x = 0; }
             if (x2 < 0) { x2 = 0; }

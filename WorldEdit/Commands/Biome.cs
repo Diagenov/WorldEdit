@@ -17,7 +17,10 @@ namespace WorldEdit.Commands
 
 		public override void Execute()
         {
-            if (!CanUseCommand()) { return; }
+            if (!CanUseCommand("worldedit.region.biome"))
+			{ 
+				return; 
+			}
             int edits = 0;
 			if (biome1 != biome2)
 			{

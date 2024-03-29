@@ -40,8 +40,6 @@ namespace WorldEdit
 		public static Dictionary<string, int> Walls = new Dictionary<string, int>();
 		public static Dictionary<string, int> Slopes = new Dictionary<string, int>();
 
-		public static readonly HandlerCollection<CanEditEventArgs> CanEdit;
-
 		public override string Author => "Nyx Studios, massive upgrade by Anzhelika";
 		private readonly CancellationTokenSource _cancel = new CancellationTokenSource();
 		private readonly BlockingCollection<WECommand> _commandQueue = new BlockingCollection<WECommand>();
@@ -51,9 +49,6 @@ namespace WorldEdit
 		public static WorldEdit Instance { get; private set; }
 		static WorldEdit()
 		{
-			CanEdit = Activator.CreateInstance(typeof(HandlerCollection<CanEditEventArgs>),
-				BindingFlags.Instance | BindingFlags.NonPublic,
-				null, new object[] { "CanEditHook" }, null) as HandlerCollection<CanEditEventArgs>;
 		}
 
 		public WorldEdit(Main game) : base(game)
@@ -180,7 +175,7 @@ namespace WorldEdit
 							{
 								return;
 							}
-							if (Tools.CheckPoints(player, startX, startY, endX, endY))
+							if (Tools.CheckPoints(player, startX, startY, endX, endY, "worldedit.selection.point"))
 							{
                                 info.X = startX;
                                 info.Y = startY;
@@ -233,7 +228,7 @@ namespace WorldEdit
                             // Set both points at the same time
                             if (info.Point == 1 || info.Point == 2)
                             {
-                                if (Tools.CheckPoints(player, startX, startY, endX, endY))
+                                if (Tools.CheckPoints(player, startX, startY, endX, endY, "worldedit.selection.point"))
                                 {
                                     info.X = startX;
                                     info.Y = startY;
@@ -317,11 +312,11 @@ namespace WorldEdit
 			{
 				HelpText = "Converts biomes in the worldedit selection."
 			});
-			TShockAPI.Commands.ChatCommands.Add(new Command("worldedit.clipboard.copy", Copy, "/copy", "/c")
+			TShockAPI.Commands.ChatCommands.Add(new Command(Copy, "/copy", "/c")
 			{
 				HelpText = "Copies the worldedit selection to the clipboard."
 			});
-			TShockAPI.Commands.ChatCommands.Add(new Command("worldedit.clipboard.cut", Cut, "/cut")
+			TShockAPI.Commands.ChatCommands.Add(new Command(Cut, "/cut")
 			{
 				HelpText = "Copies the worldedit selection to the clipboard, then deletes it."
 			});
@@ -398,7 +393,7 @@ namespace WorldEdit
 			{
 				HelpText = "Paints walls in the worldedit selection."
 			});
-			TShockAPI.Commands.ChatCommands.Add(new Command("worldedit.clipboard.paste", Paste, "/paste", "/p")
+			TShockAPI.Commands.ChatCommands.Add(new Command(Paste, "/paste", "/p")
 			{
 				HelpText = "Pastes the clipboard to the worldedit selection."
 			});
@@ -833,7 +828,10 @@ namespace WorldEdit
 
 		void Activate(CommandArgs e)
 		{
-			if (e.Parameters.Count != 1)
+            if (!e.CheckRealPlayer())
+                return;
+
+            if (e.Parameters.Count != 1)
 			{
 				e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //activate <sign/chest/itemframe/sensor/dummy/weaponrack/pylon/mannequin/hatrack/foodplate/all>");
 				return;
@@ -936,6 +934,9 @@ namespace WorldEdit
 
         void Actuator(CommandArgs e)
         {
+            if (!e.CheckRealPlayer())
+                return;
+
             string param = (e.Parameters.Count == 0) ? "" : e.Parameters[0].ToLowerInvariant();
             if (param != "off" && param != "on")
             {
@@ -965,7 +966,10 @@ namespace WorldEdit
 
 		void All(CommandArgs e)
 		{
-			PlayerInfo info = e.Player.GetPlayerInfo();
+            if (!e.CheckRealPlayer())
+                return;
+
+            PlayerInfo info = e.Player.GetPlayerInfo();
 			info.X = info.Y = 0;
 			info.X2 = Main.maxTilesX - 1;
 			info.Y2 = Main.maxTilesY - 1;
@@ -974,7 +978,10 @@ namespace WorldEdit
 
 		void Biome(CommandArgs e)
 		{
-			if (e.Parameters.Count != 2)
+            if (!e.CheckRealPlayer())
+                return;
+
+            if (e.Parameters.Count != 2)
 			{
 				e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //biome <biome 1> <biome 2>");
 				return;
@@ -996,30 +1003,42 @@ namespace WorldEdit
 
 		void Copy(CommandArgs e)
 		{
-			PlayerInfo info = e.Player.GetPlayerInfo();
+            if (!e.CheckRealPlayer())
+                return;
+
+            var info = e.Player.GetPlayerInfo();
 			if (info.X == -1 || info.Y == -1 || info.X2 == -1 || info.Y2 == -1)
+			{
 				e.Player.SendErrorMessage("Invalid selection!");
+			}
 			else
+			{
 				_commandQueue.Add(new Copy(info.X, info.Y, info.X2, info.Y2, e.Player, null));
+			}
 		}
 
 		void Cut(CommandArgs e)
 		{
-            if (e.Player.Account == null)
-            {
-                e.Player.SendErrorMessage("You have to be logged in to use this command.");
+            if (!e.CheckRealPlayer())
                 return;
-            }
-			PlayerInfo info = e.Player.GetPlayerInfo();
+
+            var info = e.Player.GetPlayerInfo();
 			if (info.X == -1 || info.Y == -1 || info.X2 == -1 || info.Y2 == -1)
+			{
 				e.Player.SendErrorMessage("Invalid selection.");
+			}
 			else
+			{
 				_commandQueue.Add(new Cut(info.X, info.Y, info.X2, info.Y2, e.Player));
+			}
 		}
 
 		void Drain(CommandArgs e)
 		{
-			PlayerInfo info = e.Player.GetPlayerInfo();
+            if (!e.CheckRealPlayer())
+                return;
+
+            PlayerInfo info = e.Player.GetPlayerInfo();
 			if (info.X == -1 || info.Y == -1 || info.X2 == -1 || info.Y2 == -1)
 				e.Player.SendErrorMessage("Invalid selection.");
 			else
@@ -1028,6 +1047,9 @@ namespace WorldEdit
 
         void Fill(CommandArgs e)
         {
+            if (!e.CheckRealPlayer())
+                return;
+
             PlayerInfo info = e.Player.GetPlayerInfo();
             if (info.X == -1 || info.Y == -1 || info.X2 == -1 || info.Y2 == -1)
             {
@@ -1068,6 +1090,9 @@ namespace WorldEdit
 
         void FillWall(CommandArgs e)
         {
+            if (!e.CheckRealPlayer())
+                return;
+
             PlayerInfo info = e.Player.GetPlayerInfo();
             if (info.X == -1 || info.Y == -1 || info.X2 == -1 || info.Y2 == -1)
             {
@@ -1108,7 +1133,10 @@ namespace WorldEdit
 
         void FixGhosts(CommandArgs e)
 		{
-			PlayerInfo info = e.Player.GetPlayerInfo();
+            if (!e.CheckRealPlayer())
+                return;
+
+            PlayerInfo info = e.Player.GetPlayerInfo();
 			if (info.X == -1 || info.Y == -1 || info.X2 == -1 || info.Y2 == -1)
 				e.Player.SendErrorMessage("Invalid selection!");
 			else
@@ -1117,7 +1145,10 @@ namespace WorldEdit
 
 		void FixGrass(CommandArgs e)
 		{
-			PlayerInfo info = e.Player.GetPlayerInfo();
+            if (!e.CheckRealPlayer())
+                return;
+
+            PlayerInfo info = e.Player.GetPlayerInfo();
 			if (info.X == -1 || info.Y == -1 || info.X2 == -1 || info.Y2 == -1)
 				e.Player.SendErrorMessage("Invalid selection!");
 			else
@@ -1126,7 +1157,10 @@ namespace WorldEdit
 
 		void FixHalves(CommandArgs e)
 		{
-			PlayerInfo info = e.Player.GetPlayerInfo();
+            if (!e.CheckRealPlayer())
+                return;
+
+            PlayerInfo info = e.Player.GetPlayerInfo();
 			if (info.X == -1 || info.Y == -1 || info.X2 == -1 || info.Y2 == -1)
 				e.Player.SendErrorMessage("Invalid selection!");
 			else
@@ -1135,7 +1169,10 @@ namespace WorldEdit
 
 		void FixSlopes(CommandArgs e)
 		{
-			PlayerInfo info = e.Player.GetPlayerInfo();
+            if (!e.CheckRealPlayer())
+                return;
+
+            PlayerInfo info = e.Player.GetPlayerInfo();
 			if (info.X == -1 || info.Y == -1 || info.X2 == -1 || info.Y2 == -1)
 				e.Player.SendErrorMessage("Invalid selection!");
 			else
@@ -1144,7 +1181,10 @@ namespace WorldEdit
 
 		void Flood(CommandArgs e)
 		{
-			if (e.Parameters.Count != 1)
+            if (!e.CheckRealPlayer())
+                return;
+
+            if (e.Parameters.Count != 1)
 			{
 				e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //flood <liquid>");
 				return;
@@ -1169,11 +1209,9 @@ namespace WorldEdit
 
 		void Flip(CommandArgs e)
         {
-            if (e.Player.Account == null)
-            {
-                e.Player.SendErrorMessage("You have to be logged in to use this command.");
+            if (!e.CheckRealPlayer())
                 return;
-            }
+
             if (e.Parameters.Count != 1)
 				e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //flip <direction>");
 			else if (!Tools.HasClipboard(e.Player.Account.ID))
@@ -1200,6 +1238,9 @@ namespace WorldEdit
 
         void KillEmpty(CommandArgs e)
         {
+            if (!e.CheckRealPlayer())
+                return;
+
             byte action;
             switch (e.Parameters.ElementAtOrDefault(0)?.ToLower())
             {
@@ -1238,6 +1279,9 @@ namespace WorldEdit
 
         void Move(CommandArgs e)
         {
+            if (!e.CheckRealPlayer())
+                return;
+
             if (e.Parameters.Count < 2)
             {
                 e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //move <right> <down> [=> boolean expr...]");
@@ -1273,7 +1317,10 @@ namespace WorldEdit
 
         void Mow(CommandArgs e)
 		{
-			PlayerInfo info = e.Player.GetPlayerInfo();
+            if (!e.CheckRealPlayer())
+                return;
+
+            PlayerInfo info = e.Player.GetPlayerInfo();
 			if (info.X == -1 || info.Y == -1 || info.X2 == -1 || info.Y2 == -1)
 				e.Player.SendErrorMessage("Invalid selection!");
 			else
@@ -1282,7 +1329,10 @@ namespace WorldEdit
 
 		void Near(CommandArgs e)
 		{
-			if (e.Parameters.Count != 1)
+            if (!e.CheckRealPlayer())
+                return;
+
+            if (e.Parameters.Count != 1)
 			{
 				e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //near <radius>");
 				return;
@@ -1305,7 +1355,10 @@ namespace WorldEdit
 
 		void Outline(CommandArgs e)
 		{
-			if (e.Parameters.Count < 3)
+            if (!e.CheckRealPlayer())
+                return;
+
+            if (e.Parameters.Count < 3)
 			{
 				e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //outline <tile> <color> <state> [=> boolean expr...]");
 				return;
@@ -1360,7 +1413,10 @@ namespace WorldEdit
 
 		void OutlineWall(CommandArgs e)
 		{
-			if (e.Parameters.Count < 2)
+            if (!e.CheckRealPlayer())
+                return;
+
+            if (e.Parameters.Count < 2)
 			{
 				e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //outlinewall <wall> [color] [=> boolean expr...]");
 				return;
@@ -1402,7 +1458,10 @@ namespace WorldEdit
 
 		void Paint(CommandArgs e)
 		{
-			if (e.Parameters.Count == 0)
+            if (!e.CheckRealPlayer())
+                return;
+
+            if (e.Parameters.Count == 0)
 			{
 				e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //paint <color> [where] [conditions...]");
 				return;
@@ -1436,7 +1495,10 @@ namespace WorldEdit
 
 		void PaintWall(CommandArgs e)
 		{
-			if (e.Parameters.Count == 0)
+            if (!e.CheckRealPlayer())
+                return;
+
+            if (e.Parameters.Count == 0)
 			{
 				e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //paintwall <color> [where] [conditions...]");
 				return;
@@ -1470,75 +1532,75 @@ namespace WorldEdit
 
 		void Paste(CommandArgs e)
         {
-            if (e.Player.Account == null)
-            {
-                e.Player.SendErrorMessage("You have to be logged in to use this command.");
+            if (!e.CheckRealPlayer())
                 return;
-            }
-            PlayerInfo info = e.Player.GetPlayerInfo();
+
+            var info = e.Player.GetPlayerInfo();
 			e.Player.SendInfoMessage("X: {0}, Y: {1}", info.X, info.Y);
 			if (info.X == -1 || info.Y == -1)
-				e.Player.SendErrorMessage("Invalid first point!");
-			else if (!Tools.HasClipboard(e.Player.Account.ID))
-				e.Player.SendErrorMessage("Invalid clipboard!");
-			else
 			{
-				int alignment = 0;
-                bool mode_MainBlocks = true;
-                Expression expression = null;
-                int Skip = 0;
+				e.Player.SendErrorMessage("Invalid first point!");
+				return;
+			}
+			if (!Tools.HasClipboard(e.Player.Account.ID))
+			{
+				e.Player.SendErrorMessage("Invalid clipboard!");
+				return;
+			}
 
-                if (e.Parameters.Count > Skip)
-				{
-                    if (!e.Parameters[Skip].ToLowerInvariant().StartsWith("-")
-                        && !e.Parameters[Skip].ToLowerInvariant().StartsWith("="))
+            int alignment = 0;
+            bool mode_MainBlocks = true;
+            Expression expression = null;
+            int Skip = 0;
+
+            if (e.Parameters.Count > Skip)
+            {
+                if (!e.Parameters[Skip].ToLowerInvariant().StartsWith("-")
+                    && !e.Parameters[Skip].ToLowerInvariant().StartsWith("="))
+                {
+                    foreach (char c in e.Parameters[0].ToLowerInvariant())
                     {
-                        foreach (char c in e.Parameters[0].ToLowerInvariant())
+                        if (c == 'l')
+                            alignment &= 2;
+                        else if (c == 'r')
+                            alignment |= 1;
+                        else if (c == 't')
+                            alignment &= 1;
+                        else if (c == 'b')
+                            alignment |= 2;
+                        else
                         {
-                            if (c == 'l')
-                                alignment &= 2;
-                            else if (c == 'r')
-                                alignment |= 1;
-                            else if (c == 't')
-                                alignment &= 1;
-                            else if (c == 'b')
-                                alignment |= 2;
-                            else
-                            {
-                                e.Player.SendErrorMessage("Invalid paste alignment '{0}'!", c);
-                                return;
-                            }
-                        }
-                        Skip++;
-                    }
-
-                    if ((e.Parameters.Count > Skip) && ((e.Parameters[Skip].ToLowerInvariant() == "-f")
-                        || (e.Parameters[Skip].ToLowerInvariant() == "-file")))
-                    {
-                        mode_MainBlocks = false;
-                        Skip++;
-                    }
-
-                    if (e.Parameters.Count > Skip)
-                    {
-                        if (!Parser.TryParseTree(e.Parameters.Skip(Skip), out expression))
-                        {
-                            e.Player.SendErrorMessage("Invalid expression!");
+                            e.Player.SendErrorMessage("Invalid paste alignment '{0}'!", c);
                             return;
                         }
                     }
+                    Skip++;
                 }
-                _commandQueue.Add(new Paste(info.X, info.Y, e.Player, Tools.GetClipboardPath(e.Player.Account.ID), alignment, expression, mode_MainBlocks, true));
-			}
+
+                if ((e.Parameters.Count > Skip) && ((e.Parameters[Skip].ToLowerInvariant() == "-f")
+                 || (e.Parameters[Skip].ToLowerInvariant() == "-file")))
+                {
+                    mode_MainBlocks = false;
+                    Skip++;
+                }
+
+                if (e.Parameters.Count > Skip)
+                {
+                    if (!Parser.TryParseTree(e.Parameters.Skip(Skip), out expression))
+                    {
+                        e.Player.SendErrorMessage("Invalid expression!");
+                        return;
+                    }
+                }
+            }
+            _commandQueue.Add(new Paste(info.X, info.Y, e.Player, Tools.GetClipboardPath(e.Player.Account.ID), alignment, expression, mode_MainBlocks, true));
         }
 
         void SPaste(CommandArgs e)
         {
-            if (e.Player.Account == null)
-            {
-                e.Player.SendErrorMessage("You have to be logged in to use this command.");
+            if (!e.CheckRealPlayer())
                 return;
-            }
+
             PlayerInfo info = e.Player.GetPlayerInfo();
             e.Player.SendInfoMessage("X: {0}, Y: {1}", info.X, info.Y);
             if (info.X == -1 || info.Y == -1)
@@ -1615,18 +1677,10 @@ namespace WorldEdit
 
         void Point1(CommandArgs e)
 		{
-			if (!e.Player.RealPlayer)
-			{
-                e.Player.SendErrorMessage("You must use this command in-game.");
-				return;
-            }
-			if (!e.Player.IsLoggedIn)
-			{
-                e.Player.SendErrorMessage("You do not have access to this command.");
-				return;
-            }
+            if (!e.CheckRealPlayer())
+                return;
 
-			PlayerInfo info = e.Player.GetPlayerInfo();
+            PlayerInfo info = e.Player.GetPlayerInfo();
 			if (e.Parameters.Count == 0)
 			{
                 info.Point = 1;
@@ -1657,16 +1711,8 @@ namespace WorldEdit
 
 		void Point2(CommandArgs e)
 		{
-            if (!e.Player.RealPlayer)
-            {
-                e.Player.SendErrorMessage("You must use this command in-game.");
-                return;
-            }
-            if (!e.Player.IsLoggedIn)
-            {
-                e.Player.SendErrorMessage("You do not have access to this command.");
-                return;
-            }
+			if (!e.CheckRealPlayer())
+				return;
 
             PlayerInfo info = e.Player.GetPlayerInfo();
             if (e.Parameters.Count == 0)
@@ -1699,16 +1745,9 @@ namespace WorldEdit
 
 		void Wand(CommandArgs e)
 		{
-            if (!e.Player.RealPlayer)
-            {
-                e.Player.SendErrorMessage("You must use this command in-game.");
+            if (!e.CheckRealPlayer())
                 return;
-            }
-            if (!e.Player.IsLoggedIn)
-            {
-                e.Player.SendErrorMessage("You do not have access to this command.");
-                return;
-            }
+
             var info = e.Player.GetPlayerInfo();
 			var text = (info.Wand = !info.Wand) ? "en" : "dis";
             e.Player.SendInfoMessage($"Wand mode {text}abled.");
@@ -1716,11 +1755,9 @@ namespace WorldEdit
 
 		void Redo(CommandArgs e)
         {
-            if (e.Player.Account == null)
-            {
-                e.Player.SendErrorMessage("You have to be logged in to use this command.");
+            if (!e.CheckRealPlayer())
                 return;
-            }
+
             if (e.Parameters.Count > 2)
 			{
 				e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //redo [steps] [account]");
@@ -1754,7 +1791,10 @@ namespace WorldEdit
 
 		void RegionCmd(CommandArgs e)
 		{
-			if (e.Parameters.Count > 1)
+            if (!e.CheckRealPlayer())
+                return;
+
+            if (e.Parameters.Count > 1)
 			{
 				e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //region [region name]");
 				return;
@@ -1784,6 +1824,9 @@ namespace WorldEdit
 
         void Replace(CommandArgs e)
         {
+            if (!e.CheckRealPlayer())
+                return;
+
             if (e.Parameters.Count < 2)
             {
                 e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //replace <from tile> <to tile> [=> boolean expr...]");
@@ -1836,6 +1879,9 @@ namespace WorldEdit
 
         void ReplaceWall(CommandArgs e)
         {
+            if (!e.CheckRealPlayer())
+                return;
+
             if (e.Parameters.Count < 2)
             {
                 e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //replacewall <from wall> <to wall> [=> boolean expr...]");
@@ -1888,7 +1934,10 @@ namespace WorldEdit
 
         void Resize(CommandArgs e)
 		{
-			if (e.Parameters.Count != 2)
+            if (!e.CheckRealPlayer())
+                return;
+
+            if (e.Parameters.Count != 2)
 			{
 				e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //resize <direction(s)> <amount>");
 				return;
@@ -1948,11 +1997,9 @@ namespace WorldEdit
 
 		void Rotate(CommandArgs e)
         {
-            if (e.Player.Account == null)
-            {
-                e.Player.SendErrorMessage("You have to be logged in to use this command.");
+            if (!e.CheckRealPlayer())
                 return;
-            }
+
             if (e.Parameters.Count != 1)
 			{
 				e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //rotate <angle>");
@@ -1973,11 +2020,9 @@ namespace WorldEdit
 
 		void Scale(CommandArgs e)
         {
-            if (e.Player.Account == null)
-            {
-                e.Player.SendErrorMessage("You have to be logged in to use this command.");
+            if (!e.CheckRealPlayer())
                 return;
-            }
+
             if ((e.Parameters.Count != 2) || ((e.Parameters[0] != "+") && (e.Parameters[0] != "-")))
 			{
 				e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //scale <+/-> <amount>");
@@ -1998,6 +2043,9 @@ namespace WorldEdit
 
 		void Schematic(CommandArgs e)
         {
+            if (!e.CheckRealPlayer())
+                return;
+
             const string fileFormat = "schematic-{0}.dat";
 
 			string subCmd = e.Parameters.Count == 0 ? "help" : e.Parameters[0].ToLowerInvariant();
@@ -2075,12 +2123,7 @@ namespace WorldEdit
 				case "l":
 				case "load":
                     {
-                        if (e.Player.Account == null)
-                        {
-                            e.Player.SendErrorMessage("You have to be logged in to use this command.");
-                            return;
-                        }
-                        else if (e.Parameters.Count != 2)
+                        if (e.Parameters.Count != 2)
 						{
 							e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //schematic load <name>");
 							return;
@@ -2106,12 +2149,7 @@ namespace WorldEdit
 				case "s":
 				case "save":
                     {
-                        if (e.Player.Account == null)
-                        {
-                            e.Player.SendErrorMessage("You have to be logged in to use this command.");
-                            return;
-                        }
-                        else if (!e.Player.HasPermission("worldedit.schematic.save"))
+                        if (!e.Player.HasPermission("worldedit.schematic.save"))
                         {
                             e.Player.SendErrorMessage("You do not have permission to save schematics.");
                             return;
@@ -2185,12 +2223,7 @@ namespace WorldEdit
                 case "cs":
                 case "copysave":
                     {
-                        if (e.Player.Account == null)
-                        {
-                            e.Player.SendErrorMessage("You have to be logged in to use this command.");
-                            return;
-                        }
-                        else if (!e.Player.HasPermission("worldedit.schematic.save"))
+                        if (!e.Player.HasPermission("worldedit.schematic.save"))
                         {
                             e.Player.SendErrorMessage("You do not have permission to save schematics.");
                             return;
@@ -2336,7 +2369,10 @@ namespace WorldEdit
 
 		void Select(CommandArgs e)
 		{
-			if (e.Parameters.Count != 1)
+            if (!e.CheckRealPlayer())
+                return;
+
+            if (e.Parameters.Count != 1)
 			{
 				e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //select <selection type>");
 				e.Player.SendInfoMessage("Available selections: " + string.Join(", ", Selections.Keys) + ".");
@@ -2363,7 +2399,10 @@ namespace WorldEdit
 
 		void Set(CommandArgs e)
 		{
-			if (e.Parameters.Count == 0)
+            if (!e.CheckRealPlayer())
+                return;
+
+            if (e.Parameters.Count == 0)
 			{
 				e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //set <tile> [=> boolean expr...]");
 				return;
@@ -2397,7 +2436,10 @@ namespace WorldEdit
 
 		void SetWall(CommandArgs e)
 		{
-			if (e.Parameters.Count == 0)
+            if (!e.CheckRealPlayer())
+                return;
+
+            if (e.Parameters.Count == 0)
 			{
 				e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //setwall <wall> [=> boolean expr...]");
 				return;
@@ -2431,7 +2473,10 @@ namespace WorldEdit
 
 		void SetGrass(CommandArgs e)
 		{
-			if (e.Parameters.Count == 0)
+            if (!e.CheckRealPlayer())
+                return;
+
+            if (e.Parameters.Count == 0)
 			{
 				e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //setgrass <grass> [=> boolean expr...]");
 				return;
@@ -2464,7 +2509,10 @@ namespace WorldEdit
 
 		void SetWire(CommandArgs e)
 		{
-			if (e.Parameters.Count < 2)
+            if (!e.CheckRealPlayer())
+                return;
+
+            if (e.Parameters.Count < 2)
 			{
 				e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //setwire <wire> <wire state> [=> boolean expr...]");
 				return;
@@ -2506,6 +2554,9 @@ namespace WorldEdit
 
         void Shape(CommandArgs e)
         {
+            if (!e.CheckRealPlayer())
+                return;
+
             bool wall = false, filled = false;
             switch (e.Message.Split(' ')[0].Substring(6).ToLower())
             {
@@ -2739,18 +2790,15 @@ namespace WorldEdit
 
         void Size(CommandArgs e)
         {
+            if (!e.CheckRealPlayer())
+                return;
+
             switch (e.Parameters.ElementAtOrDefault(0)?.ToLower())
             {
                 case "c":
                 case "clipboard":
                     {
-                        if (e.Player.Account == null)
-                        {
-                            e.Player.SendErrorMessage("You have to be logged in to use this command.");
-                            return;
-                        }
-
-                        UserAccount user = e.Player.Account;
+                        var user = e.Player.Account;
                         if (e.Parameters.Count > 1)
                         {
                             if (!e.Player.HasPermission("worldedit.usage.otheraccounts"))
@@ -2807,7 +2855,10 @@ namespace WorldEdit
 
 		void Slope(CommandArgs e)
 		{
-			if (e.Parameters.Count == 0)
+            if (!e.CheckRealPlayer())
+                return;
+
+            if (e.Parameters.Count == 0)
 			{
 				e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //slope <type> [=> boolean expr...]");
 				return;
@@ -2840,7 +2891,10 @@ namespace WorldEdit
 
 		void SlopeDelete(CommandArgs e)
 		{
-			int slope = 255;
+            if (!e.CheckRealPlayer())
+                return;
+
+            int slope = 255;
 			Expression expression = null;
 			PlayerInfo info = e.Player.GetPlayerInfo();
 			if (info.X == -1 || info.Y == -1 || info.X2 == -1 || info.Y2 == -1)
@@ -2872,7 +2926,10 @@ namespace WorldEdit
 
 		void Smooth(CommandArgs e)
 		{
-			PlayerInfo info = e.Player.GetPlayerInfo();
+            if (!e.CheckRealPlayer())
+                return;
+
+            PlayerInfo info = e.Player.GetPlayerInfo();
 			if (info.X == -1 || info.Y == -1 || info.X2 == -1 || info.Y2 == -1)
 			{
 				e.Player.SendErrorMessage("Invalid selection!");
@@ -2892,7 +2949,10 @@ namespace WorldEdit
 
 		void Inactive(CommandArgs e)
 		{
-			if (e.Parameters.Count == 0)
+            if (!e.CheckRealPlayer())
+                return;
+
+            if (e.Parameters.Count == 0)
 			{
 				e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //inactive <status(on/off/reverse)> [=> boolean expr...]");
 				return;
@@ -2929,7 +2989,10 @@ namespace WorldEdit
 
 		void Shift(CommandArgs e)
 		{
-			if (e.Parameters.Count != 2)
+            if (!e.CheckRealPlayer())
+                return;
+
+            if (e.Parameters.Count != 2)
 			{
 				e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //shift <direction> <amount>");
 				return;
@@ -2981,6 +3044,9 @@ namespace WorldEdit
 
         void Text(CommandArgs e)
         {
+            if (!e.CheckRealPlayer())
+                return;
+
             if (e.Parameters.Count == 0)
             {
                 e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //text <text> (\\n for new line)");
@@ -2998,17 +3064,14 @@ namespace WorldEdit
                 e.Player.SendErrorMessage("Invalid selection!");
                 return;
             }
-
             _commandQueue.Add(new Text(info.X, info.Y, info.X2, info.Y2, e.Player, e.Message.Substring(5).TrimStart()));
         }
 
 		void Undo(CommandArgs e)
         {
-            if (e.Player.Account == null)
-            {
-                e.Player.SendErrorMessage("You have to be logged in to use this command.");
+            if (!e.CheckRealPlayer())
                 return;
-            }
+
             if (e.Parameters.Count > 2)
 			{
 				e.Player.SendErrorMessage("Invalid syntax! Proper syntax: //undo [steps] [account]");

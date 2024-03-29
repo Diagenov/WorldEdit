@@ -1116,16 +1116,18 @@ namespace WorldEdit
     
         public static bool CheckPoint(TSPlayer player, PlayerInfo info, int x, int y, int pointNumber)
         {
-            if (player.HasPermission("worldedit.selection.point"))
-                return true;
-
-            var r = RegionInfo.FindByPoint(x, y);
-            if (r == null || !r.Has(RegionTypes.WorldEdit) || !r.Region.HasPermissionToBuildInRegion(player))
+            if (player.HasPermission("*"))
             {
-                player.SendErrorMessage("You have touched a foreign region!");
+                return true;
+            }
+
+            var ri = RegionInfo.FindByPoint(x, y);
+            if (!CheckPoint(player, ri.Region, ri, player.HasPermission("worldedit.selection.point")))
+            {
                 return false;
             }
-            if (pointNumber == 1 ? !r.Region.InArea(info.X2, info.Y2) : !r.Region.InArea(info.X, info.Y))
+
+            if (pointNumber == 1 ? !ri.Region.InArea(info.X2, info.Y2) : !ri.Region.InArea(info.X, info.Y))
             {
                 if (pointNumber == 1)
                 {
@@ -1142,22 +1144,105 @@ namespace WorldEdit
             return true;
         }
 
-        public static bool CheckPoints(TSPlayer player, int x1, int y1, int x2, int y2)
+        public static bool CheckPoints(TSPlayer player, int _x1, int _y1, int _x2, int _y2, string permission)
         {
-            if (player.HasPermission("worldedit.selection.point"))
-                return true;
-
-            var r1 = RegionInfo.FindByPoint(x1, y1);
-            if (r1 == null || !r1.Has(RegionTypes.WorldEdit) || !r1.Region.HasPermissionToBuildInRegion(player))
+            if (player.HasPermission("*"))
             {
-                player.SendErrorMessage("You have touched a foreign region!");
+                return true;
+            }
+            var access = player.HasPermission(permission);
+
+            int x1 = Math.Min(_x1, _x2);
+            int y1 = Math.Min(_y1, _y2);
+            int x2 = Math.Max(_x1, _x2);
+            int y2 = Math.Max(_y1, _y2);
+
+            var area = new Rectangle(x1, y1, x2 - x1 + 1, y2 - y1 + 1);
+            var list = new List<Tuple<Region, RegionInfo>>();
+
+            foreach (var r in TShock.Regions.Regions.ToArray())
+            {
+                var region = new Rectangle(r.Area.X, r.Area.Y, r.Area.Width + 1, r.Area.Height + 1);
+                var intersect = Rectangle.Intersect(area, region);
+                if (intersect.Width == 0 || intersect.Height == 0)
+                {
+                    continue;
+                }
+                list.Add(Tuple.Create(r, RegionInfo.FindByRegion(r)));
+            }
+            if (list.Count == 0)
+            {
+                player.SendErrorMessage($"You have touched a foreign region!");
+                return false;
+            }
+            list = list.OrderByDescending(t => t.Item1.Z).ToList();
+
+            if (list.First().Item1.Area.Contains(area))
+            {
+                return CheckPoint(player, list.First().Item1, list.First().Item2, access);
+            }
+            else if (list.Count == 1)
+            {
+                player.SendErrorMessage($"You have touched a foreign region! Region: [c/ffffff:{list.First().Item1.Name}]");
                 return false;
             }
 
-            var r2 = RegionInfo.FindByPoint(x2, y2);
-            if (r2 != r1)
+            var checks = new List<Region>();
+            var @checked = false;
+
+            for (int i = x1; i <= x2; i++)
+                for (int j = y1; j <= y2; j++)
+                {
+                    var q = list.Find(t => t.Item1.InArea(i, j));
+                    if (q == null)
+                    {
+                        player.SendErrorMessage($"You have touched a foreign region! Region: [c/ffffff:{q.Item1.Name}]");
+                        return false;
+                    }
+                    if (@checked || checks.Contains(q.Item1))
+                    {
+                        continue;
+                    }
+                    if (!CheckPoint(player, q.Item1, q.Item2, access))
+                    {
+                        return false;
+                    }
+                    checks.Add(q.Item1);
+                    @checked = checks.Count == list.Count();
+                }
+
+            return true;
+        }
+
+        private static bool CheckPoint(TSPlayer player, Region region, RegionInfo info, bool permission)
+        {
+            if (!region.HasPermissionToBuildInRegion(player))
             {
-                player.SendErrorMessage("You have touched a foreign region!");
+                player.SendErrorMessage($"You have touched a foreign region! Region: [c/ffffff:{region.Name}]");
+                return false;
+            }
+            if (permission)
+            {
+                return true;
+            }
+            if (info == null || !info.Has(RegionTypes.WorldEdit))
+            {
+                player.SendErrorMessage($"You have touched a foreign region! Region: [c/ffffff:{region.Name}]");
+                return false;
+            }
+            return true;
+        }
+    
+        public static bool CheckRealPlayer(this CommandArgs e)
+        {
+            if (!e.Player.RealPlayer)
+            {
+                e.Player.SendErrorMessage("You must use this command in-game.");
+                return false;
+            }
+            if (!e.Player.IsLoggedIn)
+            {
+                e.Player.SendErrorMessage("You do not have access to this command.");
                 return false;
             }
             return true;

@@ -20,7 +20,7 @@ namespace WorldEdit.Commands
 
         public override void Execute()
         {
-            if (!CanUseCommand()) 
+            if (!CanUseCommand("worldedit.region.replacewall")) 
             { 
                 return; 
             }

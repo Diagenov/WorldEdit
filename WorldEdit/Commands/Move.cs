@@ -36,7 +36,7 @@ namespace WorldEdit.Commands
             int tX2 = Math.Max(x2, Math.Max(newX, newX2));
             int tY2 = Math.Max(y2, Math.Max(newY, newY2));
 
-            if (!CanUseCommand(tX, tY, tX2, tY2)) { return; }
+            if (!CanUseCommand(tX, tY, tX2, tY2, "worldedit.region.move")) { return; }
             Tools.PrepareUndo(tX, tY, tX2, tY2, plr);
 
             WorldSectionData data = Tools.SaveWorldSection(x, y, x2, y2);

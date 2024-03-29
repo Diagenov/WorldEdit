@@ -122,39 +122,11 @@ namespace WorldEdit.Commands
 		{
 			return x < 0 || y < 0 || x >= Main.maxTilesX || y >= Main.maxTilesY || (Main.tile[x, y].active() && Main.tileSolid[Main.tile[x, y].type]);
 		}
-        public bool CanUseCommand() => CanUseCommand(x, y, x2, y2);
-        public bool CanUseCommand(int x, int y, int x2, int y2)
+
+        public bool CanUseCommand(string permission) => CanUseCommand(x, y, x2, y2, permission);
+        public bool CanUseCommand(int x, int y, int x2, int y2, string permission)
         {
-			CanEditEventArgs args = new CanEditEventArgs(plr, x, y, x2, y2);
-			WorldEdit.CanEdit.Invoke(args);
-			if (args.CanEdit.HasValue)
-			{
-				if (!args.CanEdit.Value)
-					plr.SendErrorMessage("You do not have permission to use this command in this area.");
-				return args.CanEdit.Value;
-			}
-
-            if (plr.HasPermission("worldedit.usage.everywhere")) { return true; }
-
-            bool noRegion = plr.HasPermission("worldedit.usage.noregion");
-            if (!noRegion && !plr.IsLoggedIn)
-            {
-                plr.SendErrorMessage("You have to be logged in to use this command.");
-                return false;
-            }
-
-            Rectangle area = new Rectangle(x, y, x2 - x, y2 - y);
-            if ((!noRegion && !TShock.Regions.Regions.Any(r => r.Area.Contains(area)))
-                || !TShock.Regions.CanBuild(x, y, plr)
-                || !TShock.Regions.CanBuild(x2, y, plr)
-                || !TShock.Regions.CanBuild(x2, y2, plr)
-                || !TShock.Regions.CanBuild(x, y2, plr))
-            {
-                plr.SendErrorMessage("You do not have permission to use this command outside of your regions.");
-                return false;
-            }
-
-            return true;
+            return Tools.CheckPoints(plr, x, y, x2, y2, permission);
         }
     }
 }

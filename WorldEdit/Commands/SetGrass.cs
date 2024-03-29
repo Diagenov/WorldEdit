@@ -28,7 +28,7 @@ namespace WorldEdit.Commands
 			if (y2 < 1) y2 = 1;
 			else if (y2 > (Main.maxTilesY - 2)) y2 = (Main.maxTilesY - 2);
 
-            if (!CanUseCommand()) { return; }
+            if (!CanUseCommand("worldedit.region.setgrass")) { return; }
             Tools.PrepareUndo(x, y, x2, y2, plr);
 
 			var tiles = WorldEdit.Biomes[grass];

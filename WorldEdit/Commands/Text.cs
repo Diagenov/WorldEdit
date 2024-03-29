@@ -15,7 +15,7 @@ namespace WorldEdit.Commands
 
         public override void Execute()
         {
-            if (!CanUseCommand()) { return; }
+            if (!CanUseCommand("worldedit.selection.text")) { return; }
             Tools.PrepareUndo(x, y, x2, y2, plr);
 
             var frames = Tools.CreateStatueText(text, x2 - x + 1, y2 - y + 1);

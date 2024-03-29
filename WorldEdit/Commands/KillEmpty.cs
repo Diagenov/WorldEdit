@@ -12,7 +12,7 @@ namespace WorldEdit.Commands
 
         public override void Execute()
         {
-            if (!CanUseCommand()) { return; }
+            if (!CanUseCommand("worldedit.utils.killempty")) { return; }
             Tools.PrepareUndo(x, y, x2, y2, plr);
 
             #region Signs
