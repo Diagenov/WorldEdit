@@ -651,9 +651,6 @@ namespace WorldEdit
 
 		public static void PrepareUndo(int x, int y, int x2, int y2, TSPlayer plr)
 		{
-            if (WorldEdit.Config.DisableUndoSystemForUnrealPlayers && !plr.RealPlayer)
-                return;
-
 			if (WorldEdit.Database.GetSqlType() == SqlType.Mysql)
 				WorldEdit.Database.Query("INSERT IGNORE INTO WorldEdit VALUES (@0, -1, -1)", plr.Account.ID);
 			else
@@ -676,11 +673,8 @@ namespace WorldEdit
 			File.Delete(Path.Combine("worldedit", string.Format("undo-{0}-{1}.dat", plr.Account.ID, undoLevel - MAX_UNDOS)));
 		}
 
-		public static bool Redo(int accountID)
+		public static bool Redo(TSPlayer plr, int accountID)
         {
-            if (WorldEdit.Config.DisableUndoSystemForUnrealPlayers && accountID == 0)
-                return false;
-
             int redoLevel = 0;
 			int undoLevel = 0;
 			using (var reader = WorldEdit.Database.QueryReader("SELECT RedoLevel, UndoLevel FROM WorldEdit WHERE Account = @0", accountID))
@@ -703,13 +697,19 @@ namespace WorldEdit
 			if (!File.Exists(redoPath))
 				return false;
 
-			string undoPath = Path.Combine("worldedit", string.Format("undo-{0}-{1}.dat", accountID, undoLevel));
+            Rectangle size = ReadSize(redoPath);
+            int x1 = Math.Max(0, size.X);
+            int y1 = Math.Max(0, size.Y);
+            int x2 = Math.Min(size.X + size.Width, Main.maxTilesX) - 1;
+            int y2 = Math.Min(size.Y + size.Height, Main.maxTilesY) - 1;
+
+            if (!CheckPoints(plr, x1, y1, x2, y2, "worldedit.history.redo"))
+                return false;
+
+            string undoPath = Path.Combine("worldedit", string.Format("undo-{0}-{1}.dat", accountID, undoLevel));
 			WorldEdit.Database.Query("UPDATE WorldEdit SET UndoLevel = @0 WHERE Account = @1", undoLevel, accountID);
 
-            Rectangle size = ReadSize(redoPath);
-            SaveWorldSection(Math.Max(0, size.X), Math.Max(0, size.Y),
-                Math.Min(size.X + size.Width - 1, Main.maxTilesX - 1),
-                Math.Min(size.Y + size.Height - 1, Main.maxTilesY - 1), undoPath);
+            SaveWorldSection(x1, y1, x2, y2, undoPath);
             LoadWorldSection(redoPath);
 			File.Delete(redoPath);
 			return true;
@@ -794,11 +794,8 @@ namespace WorldEdit
 			return data;
 		}
 
-		public static bool Undo(int accountID)
+		public static bool Undo(TSPlayer plr, int accountID)
         {
-            if (WorldEdit.Config.DisableUndoSystemForUnrealPlayers && accountID == 0)
-                return false;
-
             int redoLevel, undoLevel;
 			using (var reader = WorldEdit.Database.QueryReader("SELECT RedoLevel, UndoLevel FROM WorldEdit WHERE Account = @0", accountID))
 			{
@@ -820,13 +817,19 @@ namespace WorldEdit
 			if (!File.Exists(undoPath))
 				return false;
 
-			string redoPath = Path.Combine("worldedit", string.Format("redo-{0}-{1}.dat", accountID, redoLevel));
+            Rectangle size = ReadSize(undoPath);
+            int x1 = Math.Max(0, size.X);
+            int y1 = Math.Max(0, size.Y);
+            int x2 = Math.Min(size.X + size.Width, Main.maxTilesX) - 1;
+            int y2 = Math.Min(size.Y + size.Height, Main.maxTilesY) - 1;
+
+            if (!CheckPoints(plr, x1, y1, x2, y2, "worldedit.history.undo"))
+                return false;
+
+            string redoPath = Path.Combine("worldedit", string.Format("redo-{0}-{1}.dat", accountID, redoLevel));
 			WorldEdit.Database.Query("UPDATE WorldEdit SET RedoLevel = @0 WHERE Account = @1", redoLevel, accountID);
 
-            Rectangle size = ReadSize(undoPath);
-            SaveWorldSection(Math.Max(0, size.X), Math.Max(0, size.Y),
-                Math.Min(size.X + size.Width - 1, Main.maxTilesX - 1),
-                Math.Min(size.Y + size.Height - 1, Main.maxTilesY - 1), redoPath);
+            SaveWorldSection(x1, y1, x2, y2, redoPath);
 			LoadWorldSection(undoPath);
 			File.Delete(undoPath);
 			return true;
@@ -1235,7 +1238,7 @@ namespace WorldEdit
     
         private static void Threat(this TSPlayer player, Region region = null)
         {
-            if (player.IsBouncerThrottled())
+            if ((DateTime.UtcNow - player.LastThreat).TotalMilliseconds < 1000)
             {
                 return;
             }

@@ -409,7 +409,7 @@ namespace WorldEdit
 			{
 				HelpText = "Sets the positions of the worldedit selection's second point."
 			});
-			TShockAPI.Commands.ChatCommands.Add(new Command("worldedit.history.redo", Redo, "/redo")
+			TShockAPI.Commands.ChatCommands.Add(new Command(Redo, "/redo")
 			{
 				HelpText = "Redoes a number of worldedit actions."
 			});
@@ -501,7 +501,7 @@ namespace WorldEdit
 			{
 				HelpText = "Creates text with alphabet statues in the worldedit selection."
 			});
-			TShockAPI.Commands.ChatCommands.Add(new Command("worldedit.history.undo", Undo, "/undo")
+			TShockAPI.Commands.ChatCommands.Add(new Command(Undo, "/undo")
 			{
 				HelpText = "Undoes a number of worldedit actions."
 			});
@@ -724,29 +724,6 @@ namespace WorldEdit
 
             switch (e.Parameters.ElementAtOrDefault(0).ToLower())
             {
-                case "wand":
-                case "magicwandtilelimit":
-                    {
-                        if (e.Parameters.Count == 1)
-                        {
-                            e.Player.SendSuccessMessage($"Magic wand tile limit " +
-                                $"is {Config.MagicWandTileLimit}.");
-                            return;
-                        }
-
-                        if (!int.TryParse(e.Parameters[1], out int limit)
-                            || (limit < 0))
-                        {
-                            e.Player.SendErrorMessage("Invalid syntax! Proper syntax: " +
-                                "//worldedit <magicwandtilelimit/wand> <amount>");
-                            return;
-                        }
-
-                        Config.MagicWandTileLimit = limit;
-                        Config.Write(ConfigPath);
-                        e.Player.SendSuccessMessage($"Magic wand tile limit set to {limit}.");
-                        break;
-                    }
                 case "undocount":
                 case "maxundocount":
                     {
@@ -768,29 +745,6 @@ namespace WorldEdit
                         Config.MaxUndoCount = count;
                         Config.Write(ConfigPath);
                         e.Player.SendSuccessMessage($"Max undo count set to {count}.");
-                        break;
-                    }
-                case "undodisable":
-                case "disableundosystemforunrealplayers":
-                    {
-                        if (e.Parameters.Count == 1)
-                        {
-                            e.Player.SendSuccessMessage($"Disable undo system for unreal players " +
-                                $"is {Config.DisableUndoSystemForUnrealPlayers}.");
-                            return;
-                        }
-
-                        if (!bool.TryParse(e.Parameters[1], out bool disable))
-                        {
-                            e.Player.SendErrorMessage("Invalid syntax! Proper syntax: " +
-                                "//worldedit <disableundosystemforunrealplayers/" +
-                                "undodisable> <true/false>");
-                            return;
-                        }
-
-                        Config.DisableUndoSystemForUnrealPlayers = disable;
-                        Config.Write(ConfigPath);
-                        e.Player.SendSuccessMessage($"Disable undo system for unreal players set to {disable}.");
                         break;
                     }
                 case "schematic":
