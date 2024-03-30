@@ -692,10 +692,11 @@ namespace WorldEdit
 				return false;
 
 			string redoPath = Path.Combine("worldedit", string.Format("redo-{0}-{1}.dat", accountID, redoLevel + 1));
-			WorldEdit.Database.Query("UPDATE WorldEdit SET RedoLevel = @0 WHERE Account = @1", redoLevel, accountID);
-
-			if (!File.Exists(redoPath))
-				return false;
+            if (!File.Exists(redoPath))
+            {
+                WorldEdit.Database.Query("UPDATE WorldEdit SET RedoLevel = @0 WHERE Account = @1", redoLevel, accountID);
+                return false;
+            }
 
             Rectangle size = ReadSize(redoPath);
             int x1 = Math.Max(0, size.X);
@@ -708,6 +709,7 @@ namespace WorldEdit
 
             string undoPath = Path.Combine("worldedit", string.Format("undo-{0}-{1}.dat", accountID, undoLevel));
 			WorldEdit.Database.Query("UPDATE WorldEdit SET UndoLevel = @0 WHERE Account = @1", undoLevel, accountID);
+            WorldEdit.Database.Query("UPDATE WorldEdit SET RedoLevel = @0 WHERE Account = @1", redoLevel, accountID);
 
             SaveWorldSection(x1, y1, x2, y2, undoPath);
             LoadWorldSection(redoPath);
@@ -812,10 +814,11 @@ namespace WorldEdit
 				return false;
 
 			string undoPath = Path.Combine("worldedit", string.Format("undo-{0}-{1}.dat", accountID, undoLevel + 1));
-			WorldEdit.Database.Query("UPDATE WorldEdit SET UndoLevel = @0 WHERE Account = @1", undoLevel, accountID);
-
-			if (!File.Exists(undoPath))
-				return false;
+            if (!File.Exists(undoPath))
+            {
+                WorldEdit.Database.Query("UPDATE WorldEdit SET UndoLevel = @0 WHERE Account = @1", undoLevel, accountID);
+                return false;
+            }
 
             Rectangle size = ReadSize(undoPath);
             int x1 = Math.Max(0, size.X);
@@ -828,6 +831,7 @@ namespace WorldEdit
 
             string redoPath = Path.Combine("worldedit", string.Format("redo-{0}-{1}.dat", accountID, redoLevel));
 			WorldEdit.Database.Query("UPDATE WorldEdit SET RedoLevel = @0 WHERE Account = @1", redoLevel, accountID);
+            WorldEdit.Database.Query("UPDATE WorldEdit SET UndoLevel = @0 WHERE Account = @1", undoLevel, accountID);
 
             SaveWorldSection(x1, y1, x2, y2, redoPath);
 			LoadWorldSection(undoPath);
