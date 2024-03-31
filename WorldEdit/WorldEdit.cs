@@ -397,7 +397,7 @@ namespace WorldEdit
 			{
 				HelpText = "Pastes the clipboard to the worldedit selection."
 			});
-			TShockAPI.Commands.ChatCommands.Add(new Command("worldedit.clipboard.spaste", SPaste, "/spaste", "/sp")
+			TShockAPI.Commands.ChatCommands.Add(new Command(SPaste, "/spaste", "/sp")
 			{
 				HelpText = "Pastes the clipboard to the worldedit selection with certain conditions."
 			});
