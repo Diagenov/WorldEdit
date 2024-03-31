@@ -47,6 +47,7 @@ namespace WorldEdit
 		{ 
 			0
 		};
+		public static List<int> BuildItems = new List<int>();
 
         public override string Author => "Nyx Studios, massive upgrade by Anzhelika";
 		private readonly CancellationTokenSource _cancel = new CancellationTokenSource();
@@ -96,186 +97,198 @@ namespace WorldEdit
 			if (e.Handled)
 				return;
 
+            var player = TShock.Players[e.Msg.whoAmI];
+			if (player == null)
+				return;
+
+            if (e.MsgID == PacketTypes.DoorUse)
+			{
+                using (var reader = new BinaryReader(new MemoryStream(e.Msg.readBuffer, e.Index, e.Length)))
+				{
+					var action = reader.ReadByte();
+					var x = reader.ReadInt16();
+                    var y = reader.ReadInt16();
+                    var direction = reader.ReadByte();
+
+                    if (player.HasBuildPermission(x, y, false))
+						return;
+
+                    NetMessage.TrySendData(19, -1, player.Index, null, action, x, y, direction);
+                    e.Handled = true;
+                }
+                return;
+			}
+
 			if (e.MsgID != PacketTypes.Tile && e.MsgID != PacketTypes.MassWireOperation)
 				return;
 
-            var player = TShock.Players[e.Msg.whoAmI];
             var info = player.GetPlayerInfo();
             if (info.Point == 0 && (e.MsgID == PacketTypes.Tile || !info.Wand))
-            {
                 return;
-            }
 
-            switch (e.MsgID)
+			if (e.MsgID == PacketTypes.Tile)
 			{
-				#region Packet 17 - Tile
-				case PacketTypes.Tile:
-                    using (var reader = new BinaryReader(new MemoryStream(e.Msg.readBuffer, e.Index, e.Length)))
+                using (var reader = new BinaryReader(new MemoryStream(e.Msg.readBuffer, e.Index, e.Length)))
+                {
+                    reader.ReadByte();
+                    int x = reader.ReadInt16();
+                    int y = reader.ReadInt16();
+
+                    if (x < 0 || y < 0 || x >= Main.maxTilesX || y >= Main.maxTilesY)
                     {
-                        reader.ReadByte();
-                        int x = reader.ReadInt16();
-                        int y = reader.ReadInt16();
-						
-						if (x < 0 || y < 0 || x >= Main.maxTilesX || y >= Main.maxTilesY)
-						{
-							return;
-						}
-                        if (info.Point == 1)
-                        {
-							if (Tools.CheckPoint(player, info, x, y, 1))
-							{
-                                info.X = x;
-                                info.Y = y;
-                                player.SendInfoMessage("Set point 1.");
-                            }
-                        }
-                        else if (info.Point == 2)
-                        {
-                            if (Tools.CheckPoint(player, info, x, y, 2))
-                            {
-                                info.X2 = x;
-                                info.Y2 = y;
-                                player.SendInfoMessage("Set point 2.");
-                            }
-                        }
-                        else if (info.Point == 3)
-                        {
-                            var regions = TShock.Regions.InAreaRegionName(x, y).ToList();
-                            if (regions.Count == 0)
-                            {
-                                player.SendErrorMessage("No region exists there.");
-                            }
-                            else
-                            {
-                                Region curReg = TShock.Regions.GetRegionByName(regions[0]);
-                                info.X = curReg.Area.Left;
-                                info.Y = curReg.Area.Top;
-                                info.X2 = curReg.Area.Right;
-                                info.Y2 = curReg.Area.Bottom;
-                                player.SendInfoMessage("Set region.");
-                            }
-                        }
-                        info.Point = 0;
-                        e.Handled = true;
-                        player.SendTileSquareCentered(x, y, 3);
+                        return;
                     }
-                    return;
-				#endregion
-
-				#region Packet 109 - MassWireOperation
-				case PacketTypes.MassWireOperation:
-                    using (var reader = new BinaryReader(new MemoryStream(e.Msg.readBuffer, e.Index, e.Length)))
+                    if (info.Point == 1)
                     {
-                        int startX = reader.ReadInt16();
-                        int startY = reader.ReadInt16();
-                        int endX = reader.ReadInt16();
-                        int endY = reader.ReadInt16();
-						var mode = reader.ReadByte();
-
-                        if (startX < 0 || startY < 0 || endX < 0 || endY < 0 || startX >= Main.maxTilesX || startY >= Main.maxTilesY || endX >= Main.maxTilesX || endY >= Main.maxTilesY)
-						{
-							return;
-						}
-
-						if (info.Wand)
-						{
-							if ((mode & 32) == 32)
-							{
-								return;
-							}
-							if (Tools.CheckPoints(player, startX, startY, endX, endY, "worldedit.selection.point"))
-							{
-                                info.X = startX;
-                                info.Y = startY;
-                                info.X2 = endX;
-                                info.Y2 = endY;
-                                player.SendInfoMessage("Set area.");
-                            }
-                        }
-                        else if (startX == endX && startY == endY)
+                        if (Tools.CheckPoint(player, info, x, y, 1))
                         {
-                            // Set a single point
-                            if (info.Point == 1)
-                            {
-								if (Tools.CheckPoint(player, info, startX, startY, 1))
-								{
-                                    info.X = startX;
-                                    info.Y = startY;
-                                    player.SendInfoMessage("Set point 1.");
-                                }
-                            }
-                            else if (info.Point == 2)
-                            {
-                                if (Tools.CheckPoint(player, info, startX, startY, 2))
-                                {
-                                    info.X2 = startX;
-                                    info.Y2 = startY;
-                                    player.SendInfoMessage("Set point 2.");
-                                }
-                            }
-                            else if (info.Point == 3)
-                            {
-                                var regions = TShock.Regions.InAreaRegionName(startX, startY).ToList();
-                                if (regions.Count == 0)
-                                {
-                                    player.SendErrorMessage("No region exists there.");
-                                }
-                                else
-                                {
-                                    Region curReg = TShock.Regions.GetRegionByName(regions[0]);
-                                    info.X = curReg.Area.Left;
-                                    info.Y = curReg.Area.Top;
-                                    info.X2 = curReg.Area.Right;
-                                    info.Y2 = curReg.Area.Bottom;
-                                    player.SendInfoMessage("Set region.");
-                                }
-                            }
+                            info.X = x;
+                            info.Y = y;
+                            player.SendInfoMessage("Set point 1.");
+                        }
+                    }
+                    else if (info.Point == 2)
+                    {
+                        if (Tools.CheckPoint(player, info, x, y, 2))
+                        {
+                            info.X2 = x;
+                            info.Y2 = y;
+                            player.SendInfoMessage("Set point 2.");
+                        }
+                    }
+                    else if (info.Point == 3)
+                    {
+                        var regions = TShock.Regions.InAreaRegionName(x, y).ToList();
+                        if (regions.Count == 0)
+                        {
+                            player.SendErrorMessage("No region exists there.");
                         }
                         else
                         {
-                            // Set both points at the same time
-                            if (info.Point == 1 || info.Point == 2)
-                            {
-                                if (Tools.CheckPoints(player, startX, startY, endX, endY, "worldedit.selection.point"))
-                                {
-                                    info.X = startX;
-                                    info.Y = startY;
-                                    info.X2 = endX;
-                                    info.Y2 = endY;
-                                    player.SendInfoMessage("Set area.");
-                                }
-                            }
-                            else if (info.Point == 3)
-                            {
-                                // Set topmost region inside the selection
-                                int x = Math.Min(startX, endX);
-                                int y = Math.Min(startY, endY);
-                                int width = Math.Max(startX, endX) - x;
-                                int height = Math.Max(startY, endY) - y;
-                                Rectangle rect = new Rectangle(x, y, width, height);
-                                List<Region> regions = TShock.Regions.Regions.FindAll(r => rect.Intersects(r.Area));
-                                if (regions.Count == 0)
-                                {
-                                    TShock.Players[e.Msg.whoAmI].SendErrorMessage("No region exists there.");
-                                }
-                                else
-                                {
-                                    Region curReg = TShock.Regions.GetTopRegion(regions);
-                                    info.X = curReg.Area.Left;
-                                    info.Y = curReg.Area.Top;
-                                    info.X2 = curReg.Area.Right;
-                                    info.Y2 = curReg.Area.Bottom;
-                                    TShock.Players[e.Msg.whoAmI].SendInfoMessage("Set region.");
-                                }
-                            }
+                            Region curReg = TShock.Regions.GetRegionByName(regions[0]);
+                            info.X = curReg.Area.Left;
+                            info.Y = curReg.Area.Top;
+                            info.X2 = curReg.Area.Right;
+                            info.Y2 = curReg.Area.Bottom;
+                            player.SendInfoMessage("Set region.");
                         }
-                        info.Point = 0;
-                        e.Handled = true;
                     }
-                    return;
-					#endregion
+                    info.Point = 0;
+                    e.Handled = true;
+                    player.SendTileSquareCentered(x, y, 3);
+                }
+                return;
 			}
-		}
+
+            using (var reader = new BinaryReader(new MemoryStream(e.Msg.readBuffer, e.Index, e.Length)))
+            {
+                int startX = reader.ReadInt16();
+                int startY = reader.ReadInt16();
+                int endX = reader.ReadInt16();
+                int endY = reader.ReadInt16();
+                var mode = reader.ReadByte();
+
+                if (startX < 0 || startY < 0 || endX < 0 || endY < 0 || startX >= Main.maxTilesX || startY >= Main.maxTilesY || endX >= Main.maxTilesX || endY >= Main.maxTilesY)
+                {
+                    return;
+                }
+
+                if (info.Wand)
+                {
+                    if ((mode & 32) == 32)
+                    {
+                        return;
+                    }
+                    if (Tools.CheckPoints(player, startX, startY, endX, endY, "worldedit.selection.point"))
+                    {
+                        info.X = startX;
+                        info.Y = startY;
+                        info.X2 = endX;
+                        info.Y2 = endY;
+                        player.SendInfoMessage("Set area.");
+                    }
+                }
+                else if (startX == endX && startY == endY)
+                {
+                    // Set a single point
+                    if (info.Point == 1)
+                    {
+                        if (Tools.CheckPoint(player, info, startX, startY, 1))
+                        {
+                            info.X = startX;
+                            info.Y = startY;
+                            player.SendInfoMessage("Set point 1.");
+                        }
+                    }
+                    else if (info.Point == 2)
+                    {
+                        if (Tools.CheckPoint(player, info, startX, startY, 2))
+                        {
+                            info.X2 = startX;
+                            info.Y2 = startY;
+                            player.SendInfoMessage("Set point 2.");
+                        }
+                    }
+                    else if (info.Point == 3)
+                    {
+                        var regions = TShock.Regions.InAreaRegionName(startX, startY).ToList();
+                        if (regions.Count == 0)
+                        {
+                            player.SendErrorMessage("No region exists there.");
+                        }
+                        else
+                        {
+                            Region curReg = TShock.Regions.GetRegionByName(regions[0]);
+                            info.X = curReg.Area.Left;
+                            info.Y = curReg.Area.Top;
+                            info.X2 = curReg.Area.Right;
+                            info.Y2 = curReg.Area.Bottom;
+                            player.SendInfoMessage("Set region.");
+                        }
+                    }
+                }
+                else
+                {
+                    // Set both points at the same time
+                    if (info.Point == 1 || info.Point == 2)
+                    {
+                        if (Tools.CheckPoints(player, startX, startY, endX, endY, "worldedit.selection.point"))
+                        {
+                            info.X = startX;
+                            info.Y = startY;
+                            info.X2 = endX;
+                            info.Y2 = endY;
+                            player.SendInfoMessage("Set area.");
+                        }
+                    }
+                    else if (info.Point == 3)
+                    {
+                        // Set topmost region inside the selection
+                        int x = Math.Min(startX, endX);
+                        int y = Math.Min(startY, endY);
+                        int width = Math.Max(startX, endX) - x;
+                        int height = Math.Max(startY, endY) - y;
+                        Rectangle rect = new Rectangle(x, y, width, height);
+                        List<Region> regions = TShock.Regions.Regions.FindAll(r => rect.Intersects(r.Area));
+                        if (regions.Count == 0)
+                        {
+                            TShock.Players[e.Msg.whoAmI].SendErrorMessage("No region exists there.");
+                        }
+                        else
+                        {
+                            Region curReg = TShock.Regions.GetTopRegion(regions);
+                            info.X = curReg.Area.Left;
+                            info.Y = curReg.Area.Top;
+                            info.X2 = curReg.Area.Right;
+                            info.Y2 = curReg.Area.Bottom;
+                            TShock.Players[e.Msg.whoAmI].SendInfoMessage("Set region.");
+                        }
+                    }
+                }
+                info.Point = 0;
+                e.Handled = true;
+            }
+        }
 
 		string lockFilePath_Update_1_4 = Path.Combine(WorldEditFolderName, "1.4.0.lock");
 		
@@ -319,6 +332,7 @@ namespace WorldEdit
                     {
 						BuildWalls.Add(i.createWall);
                     }
+					BuildItems.Add(i.netID);
                 }
 			}
 		}
