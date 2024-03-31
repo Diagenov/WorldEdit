@@ -22,21 +22,20 @@ namespace WorldEdit.Commands
 
         public override void Execute()
         {
-            int newX = x + right, newY = y + down;
-            if (newX < 0) { newX = 0; }
-            if (newY < 0) { newY = 0; }
-            if (newX >= Main.maxTilesX - Math.Abs(x - x2))
-            { newX = Main.maxTilesX - Math.Abs(x - x2) - 1; }
-            if (newY >= Main.maxTilesY - Math.Abs(y - y2))
-            { newY = Main.maxTilesY - Math.Abs(y - y2) - 1; }
-            int newX2 = newX + Math.Abs(x - x2), newY2 = newY + Math.Abs(y - y2);
+            int newX = Math.Min(Main.maxTilesX - Math.Abs(x - x2) - 1, Math.Max(0, x + right));
+            int newY = Math.Min(Main.maxTilesY - Math.Abs(y - y2) - 1, Math.Max(0, y + down));
+            int newX2 = newX + Math.Abs(x - x2);
+            int newY2 = newY + Math.Abs(y - y2);
             
             int tX = Math.Min(x, Math.Min(newX, newX2));
             int tY = Math.Min(y, Math.Min(newY, newY2));
             int tX2 = Math.Max(x2, Math.Max(newX, newX2));
             int tY2 = Math.Max(y2, Math.Max(newY, newY2));
 
-            if (!CanUseCommand(tX, tY, tX2, tY2, "worldedit.region.move")) { return; }
+            if (!CanUseCommand(tX, tY, tX2, tY2, "worldedit.region.move")) 
+            { 
+                return; 
+            }
             Tools.PrepareUndo(tX, tY, tX2, tY2, plr);
 
             WorldSectionData data = Tools.SaveWorldSection(x, y, x2, y2);

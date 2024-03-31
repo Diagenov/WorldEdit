@@ -1,4 +1,5 @@
 ﻿using Terraria;
+using Terraria.IO;
 using TShockAPI;
 using WorldEdit.Expressions;
 
@@ -23,6 +24,11 @@ namespace WorldEdit.Commands
             if (!CanUseCommand("worldedit.region.replacewall")) 
             { 
                 return; 
+            }
+            if (!WorldEdit.BuildWalls.Contains(to))
+            {
+                plr.SendErrorMessage("You are not determined enough to use this!");
+                return;
             }
             Tools.PrepareUndo(x, y, x2, y2, plr);
             int edits = 0;

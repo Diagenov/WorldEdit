@@ -18,7 +18,15 @@ namespace WorldEdit.Commands
 
 		public override void Execute()
         {
-            if (!CanUseCommand("worldedit.region.setwall")) { return; }
+            if (!CanUseCommand("worldedit.region.setwall")) 
+			{ 
+				return; 
+			}
+            if (!WorldEdit.BuildWalls.Contains(wallType))
+            {
+				plr.SendErrorMessage("You are not determined enough to use this!");
+                return;
+            }
             Tools.PrepareUndo(x, y, x2, y2, plr);
 			int edits = 0;
 			for (int i = x; i <= x2; i++)

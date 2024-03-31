@@ -39,8 +39,16 @@ namespace WorldEdit
 		public static Dictionary<string, int> Tiles = new Dictionary<string, int>();
 		public static Dictionary<string, int> Walls = new Dictionary<string, int>();
 		public static Dictionary<string, int> Slopes = new Dictionary<string, int>();
+		public static List<int> BuildTiles = new List<int>()
+		{
+			-1, -2, -3, -4
+		};
+        public static List<int> BuildWalls = new List<int>() 
+		{ 
+			0
+		};
 
-		public override string Author => "Nyx Studios, massive upgrade by Anzhelika";
+        public override string Author => "Nyx Studios, massive upgrade by Anzhelika";
 		private readonly CancellationTokenSource _cancel = new CancellationTokenSource();
 		private readonly BlockingCollection<WECommand> _commandQueue = new BlockingCollection<WECommand>();
 		public override string Description => "Adds commands for mass editing of blocks.";
@@ -71,7 +79,7 @@ namespace WorldEdit
 		public override void Initialize()
 		{
 			ServerApi.Hooks.GameInitialize.Register(this, OnInitialize);
-			ServerApi.Hooks.GamePostInitialize.Register(this, OnPostInitialize);
+			ServerApi.Hooks.GamePostInitialize.Register(this, OnPostInitialize, -1000);
 			ServerApi.Hooks.NetGetData.Register(this, OnGetData);
             TShockAPI.Hooks.GeneralHooks.ReloadEvent += OnReload;
 		}
@@ -281,6 +289,38 @@ namespace WorldEdit
 				TShock.Log.ConsoleInfo("WorldEdit updated undo/redo/clipboard/schematic files to Terraria v1.4.x.");
 				TShock.Log.ConsoleInfo("Do not delete 1.4.0.lock inside worldedit folder; this message will only show once.");
 			}
+
+			var build = TShock.Regions.GetRegionByName("BuildRegion");
+			if (build == null)
+			{
+				return;
+			}
+			foreach (var chest in Main.chest)
+			{
+				if (chest == null || !build.InArea(chest.x, chest.y))
+				{
+					continue;
+				}
+				if (TShock.Regions.GetTopRegion(TShock.Regions.InAreaRegion(chest.x, chest.y)) != build)
+				{
+					continue;
+				}
+				foreach (var i in chest.item)
+				{
+					if (i == null || !i.active || i.netID <= 0 || i.stack <= 0)
+					{
+						continue;
+					}
+					if (i.createTile >= 0 && !Main.tileFrameImportant[i.createTile] && !BuildTiles.Contains(i.createTile))
+					{
+						BuildTiles.Add(i.createTile);
+					}
+                    if (i.createWall > 0 && !BuildWalls.Contains(i.createWall))
+                    {
+						BuildWalls.Add(i.createWall);
+                    }
+                }
+			}
 		}
 		
 		void OnInitialize(EventArgs e)
@@ -364,7 +404,7 @@ namespace WorldEdit
 			{
 				HelpText = "Deletes empty signs and/or chests (only entities, doesn't remove tiles)."
 			});
-			TShockAPI.Commands.ChatCommands.Add(new Command("worldedit.region.move", Move, "/move")
+			TShockAPI.Commands.ChatCommands.Add(new Command(Move, "/move")
 			{
 				HelpText = "Moves tiles from the worldedit selection to new area."
 			});
@@ -417,11 +457,11 @@ namespace WorldEdit
 			{
 				HelpText = "Selects a region as a worldedit selection."
 			});
-			TShockAPI.Commands.ChatCommands.Add(new Command("worldedit.region.replace", Replace, "/replace", "/rep")
+			TShockAPI.Commands.ChatCommands.Add(new Command(Replace, "/replace", "/rep")
 			{
 				HelpText = "Replaces tiles in the worldedit selection."
 			});
-			TShockAPI.Commands.ChatCommands.Add(new Command("worldedit.region.replacewall", ReplaceWall, "/replacewall", "/repw")
+			TShockAPI.Commands.ChatCommands.Add(new Command(ReplaceWall, "/replacewall", "/repw")
 			{
 				HelpText = "Replaces walls in the worldedit selection."
 			});
@@ -441,15 +481,15 @@ namespace WorldEdit
 			{
 				HelpText = "Sets the worldedit selection function."
 			});
-			TShockAPI.Commands.ChatCommands.Add(new Command("worldedit.region.set", Set, "/set")
+			TShockAPI.Commands.ChatCommands.Add(new Command(Set, "/set")
 			{
 				HelpText = "Sets tiles in the worldedit selection."
 			});
-			TShockAPI.Commands.ChatCommands.Add(new Command("worldedit.region.setgrass", SetGrass, "/setgrass")
+			TShockAPI.Commands.ChatCommands.Add(new Command(SetGrass, "/setgrass")
 			{
 				HelpText = "Sets certain grass in the worldedit selection."
 			});
-			TShockAPI.Commands.ChatCommands.Add(new Command("worldedit.region.setwall", SetWall, "/setwall", "/swa")
+			TShockAPI.Commands.ChatCommands.Add(new Command(SetWall, "/setwall", "/swa")
 			{
 				HelpText = "Sets walls in the worldedit selection."
 			});
