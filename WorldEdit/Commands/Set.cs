@@ -22,7 +22,7 @@ namespace WorldEdit.Commands
 			{ 
 				return; 
 			}
-            if (!WorldEdit.BuildTiles.Contains(tileType))
+            if (!plr.HasPermission("worldedit.region.set") && !WorldEdit.BuildTiles.Contains(tileType))
             {
                 plr.SendErrorMessage("You are not determined enough to use this!");
                 return;

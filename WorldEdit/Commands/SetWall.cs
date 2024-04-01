@@ -22,7 +22,7 @@ namespace WorldEdit.Commands
 			{ 
 				return; 
 			}
-            if (!WorldEdit.BuildWalls.Contains(wallType))
+            if (!plr.HasPermission("worldedit.region.setwall") && !WorldEdit.BuildWalls.Contains(wallType))
             {
 				plr.SendErrorMessage("You are not determined enough to use this!");
                 return;

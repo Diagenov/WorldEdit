@@ -25,7 +25,7 @@ namespace WorldEdit.Commands
             { 
                 return; 
             }
-            if (!WorldEdit.BuildWalls.Contains(to))
+            if (!plr.HasPermission("worldedit.region.replacewall") && !WorldEdit.BuildWalls.Contains(to))
             {
                 plr.SendErrorMessage("You are not determined enough to use this!");
                 return;

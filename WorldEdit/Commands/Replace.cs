@@ -24,7 +24,7 @@ namespace WorldEdit.Commands
             { 
                 return; 
             }
-            if (!WorldEdit.BuildTiles.Contains(to))
+            if (!plr.HasPermission("worldedit.region.replace") && !WorldEdit.BuildTiles.Contains(to))
             {
                 plr.SendErrorMessage("You are not determined enough to use this!");
                 return;
