@@ -563,7 +563,7 @@ namespace WorldEdit
 			{
 				HelpText = "Scale the clipboard"
 			});
-			TShockAPI.Commands.ChatCommands.Add(new Command("worldedit.region.actuator", Actuator, "/actuator")
+			TShockAPI.Commands.ChatCommands.Add(new Command(Actuator, "/actuator")
 			{
 				HelpText = "Sets actuators in the worldedit selection."
 			});
