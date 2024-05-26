@@ -1151,7 +1151,7 @@ namespace WorldEdit
             return true;
         }
 
-        public static bool CheckPoints(TSPlayer player, int _x1, int _y1, int _x2, int _y2, string permission)
+        public static bool CheckPoints(TSPlayer player, int _x1, int _y1, int _x2, int _y2, string permission, Func<RegionInfo, bool> function = null)
         {
             if (player.HasPermission("*"))
             {
@@ -1180,6 +1180,11 @@ namespace WorldEdit
             if (list.Count == 0)
             {
                 player.Threat();
+                return false;
+            }
+            if (!access && function != null && !list.Any(t => function(t.Item2) && t.Item1.Area.Contains(area)))
+            {
+                player.SendErrorMessage("You are not determined enough to use this!");
                 return false;
             }
             list = list.OrderByDescending(t => t.Item1.Z).ToList();

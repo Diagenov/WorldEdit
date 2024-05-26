@@ -39,15 +39,6 @@ namespace WorldEdit
 		public static Dictionary<string, int> Tiles = new Dictionary<string, int>();
 		public static Dictionary<string, int> Walls = new Dictionary<string, int>();
 		public static Dictionary<string, int> Slopes = new Dictionary<string, int>();
-		public static List<int> BuildTiles = new List<int>()
-		{
-			-1, -2, -3, -4
-		};
-        public static List<int> BuildWalls = new List<int>() 
-		{ 
-			0
-		};
-		public static List<int> BuildItems = new List<int>();
 
         public override string Author => "Nyx Studios, massive upgrade by Anzhelika";
 		private readonly CancellationTokenSource _cancel = new CancellationTokenSource();
@@ -301,39 +292,6 @@ namespace WorldEdit
 				File.Create(lockFilePath_Update_1_4).Close();
 				TShock.Log.ConsoleInfo("WorldEdit updated undo/redo/clipboard/schematic files to Terraria v1.4.x.");
 				TShock.Log.ConsoleInfo("Do not delete 1.4.0.lock inside worldedit folder; this message will only show once.");
-			}
-
-			var build = TShock.Regions.GetRegionByName("BuildRegion");
-			if (build == null)
-			{
-				return;
-			}
-			foreach (var chest in Main.chest)
-			{
-				if (chest == null || !build.InArea(chest.x, chest.y))
-				{
-					continue;
-				}
-				if (TShock.Regions.GetTopRegion(TShock.Regions.InAreaRegion(chest.x, chest.y)) != build)
-				{
-					continue;
-				}
-				foreach (var i in chest.item)
-				{
-					if (i == null || !i.active || i.netID <= 0 || i.stack <= 0)
-					{
-						continue;
-					}
-					if (i.createTile >= 0 && !Main.tileFrameImportant[i.createTile] && !BuildTiles.Contains(i.createTile))
-					{
-						BuildTiles.Add(i.createTile);
-					}
-                    if (i.createWall > 0 && !BuildWalls.Contains(i.createWall))
-                    {
-						BuildWalls.Add(i.createWall);
-                    }
-					BuildItems.Add(i.netID);
-                }
 			}
 		}
 		

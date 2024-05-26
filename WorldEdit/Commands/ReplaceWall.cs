@@ -21,14 +21,9 @@ namespace WorldEdit.Commands
 
         public override void Execute()
         {
-            if (!CanUseCommand("worldedit.region.replacewall")) 
+            if (!CanUseCommand("worldedit.region.replacewall", r => r.Walls.Contains(to))) 
             { 
                 return; 
-            }
-            if (!plr.HasPermission("worldedit.region.replacewall") && !WorldEdit.BuildWalls.Contains(to))
-            {
-                plr.SendErrorMessage("You are not determined enough to use this!");
-                return;
             }
             Tools.PrepareUndo(x, y, x2, y2, plr);
             int edits = 0;

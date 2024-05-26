@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using Regions;
 using System;
 using System.Linq;
 using Terraria;
@@ -123,10 +124,10 @@ namespace WorldEdit.Commands
 			return x < 0 || y < 0 || x >= Main.maxTilesX || y >= Main.maxTilesY || (Main.tile[x, y].active() && Main.tileSolid[Main.tile[x, y].type]);
 		}
 
-        public bool CanUseCommand(string permission) => CanUseCommand(x, y, x2, y2, permission);
-        public bool CanUseCommand(int x, int y, int x2, int y2, string permission)
+        public bool CanUseCommand(string permission, Func<RegionInfo, bool> function = null) => CanUseCommand(x, y, x2, y2, permission, function);
+        public bool CanUseCommand(int x, int y, int x2, int y2, string permission, Func<RegionInfo, bool> function = null)
         {
-            return Tools.CheckPoints(plr, x, y, x2, y2, permission);
+            return Tools.CheckPoints(plr, x, y, x2, y2, permission, function);
         }
     }
 }

@@ -20,14 +20,9 @@ namespace WorldEdit.Commands
 
         public override void Execute()
         {
-            if (!CanUseCommand("worldedit.region.replace")) 
+            if (!CanUseCommand("worldedit.region.replace", r => r.Tiles.Contains(to))) 
             { 
                 return; 
-            }
-            if (!plr.HasPermission("worldedit.region.replace") && !WorldEdit.BuildTiles.Contains(to))
-            {
-                plr.SendErrorMessage("You are not determined enough to use this!");
-                return;
             }
             Tools.PrepareUndo(x, y, x2, y2, plr);
             int edits = 0;

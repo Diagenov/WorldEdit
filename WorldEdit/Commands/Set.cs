@@ -18,15 +18,10 @@ namespace WorldEdit.Commands
 
 		public override void Execute()
         {
-            if (!CanUseCommand("worldedit.region.set")) 
+            if (!CanUseCommand("worldedit.region.set", r => r.Tiles.Contains(tileType))) 
 			{ 
 				return; 
 			}
-            if (!plr.HasPermission("worldedit.region.set") && !WorldEdit.BuildTiles.Contains(tileType))
-            {
-                plr.SendErrorMessage("You are not determined enough to use this!");
-                return;
-            }
             Tools.PrepareUndo(x, y, x2, y2, plr);
 			int edits = 0;
 			for (int i = x; i <= x2; i++)
