@@ -1182,7 +1182,7 @@ namespace WorldEdit
                 player.Threat();
                 return false;
             }
-            if (!access && function != null && !list.Any(t => function(t.Item2) && t.Item1.Area.Contains(area)))
+            if (!access && function != null && !list.Any(t => t.Item2 != null && function(t.Item2) && t.Item1.Area.Contains(area)))
             {
                 player.SendErrorMessage("You are not determined enough to use this!");
                 return false;
