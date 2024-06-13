@@ -1128,13 +1128,15 @@ namespace WorldEdit
                 return true;
             }
 
-            var ri = RegionInfo.FindByPoint(x, y);
-            if (!CheckPoint(player, ri.Region, ri, player.HasPermission("worldedit.selection.point")))
+            var list = TShock.Regions.InAreaRegion(x, y);
+            var top = TShock.Regions.GetTopRegion(list);
+            var ri = RegionInfo.FindByRegion(top);
+
+            if (!CheckPoint(player, top, ri, player.HasPermission("worldedit.selection.point")))
             {
                 return false;
             }
-
-            if (pointNumber == 1 ? !ri.Region.InArea(info.X2, info.Y2) : !ri.Region.InArea(info.X, info.Y))
+            if (pointNumber == 1 ? !top.InArea(info.X2, info.Y2) : !top.InArea(info.X, info.Y))
             {
                 if (pointNumber == 1)
                 {
