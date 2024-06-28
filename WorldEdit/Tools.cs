@@ -1200,17 +1200,16 @@ namespace WorldEdit
                 player.Threat(list.First().Item1);
                 return false;
             }
-
             var checks = new List<Region>();
             var @checked = false;
 
             for (int i = x1; i <= x2; i++)
-                for (int j = y1; j <= y2; j++)
+                for (int j = y1; j <= y2; j++) 
                 {
-                    var q = list.Find(t => t.Item1.InArea(i, j));
+                    var q = list.Find(t => t.Item1.InArea(i, j)); 
                     if (q == null)
                     {
-                        player.Threat(q.Item1);
+                        player.Threat(); 
                         return false;
                     }
                     if (@checked || checks.Contains(q.Item1))
@@ -1224,7 +1223,6 @@ namespace WorldEdit
                     checks.Add(q.Item1);
                     @checked = checks.Count == list.Count();
                 }
-
             return true;
         }
 
